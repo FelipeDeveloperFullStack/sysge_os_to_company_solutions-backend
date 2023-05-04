@@ -22,6 +22,7 @@ import {ConnectionService} from './Whatsapp/Connection/connection.service'
 import EventsGateway from './Whatsapp/Events/events.gateway'
 import {EventsModule} from './Whatsapp/Events/events.module'
 import {EventsService} from './Whatsapp/Events/events.service'
+import {ExpensesModule} from './Modules/Expense/expenses.module'
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import {EventsService} from './Whatsapp/Events/events.service'
     OrderServicesModule,
     EquipamentsModule,
     ModelsModule,
+    ExpensesModule,
   ],
   controllers: [],
   providers: [
