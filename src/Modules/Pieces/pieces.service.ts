@@ -27,7 +27,7 @@ export class PiecesService {
     return {total: result?.length}
   }
 
-  async create(createPieceDto: PieceDto) {
+  async create(createPieceDto: PieceDto, isRegisterExpenseInPiece?: boolean) {
     createPieceDto = {
       ...createPieceDto,
       description: String(createPieceDto.description).toUpperCase(),
@@ -53,12 +53,19 @@ export class PiecesService {
         )
       }
     } else {
-      throw new HttpException(
-        {
-          message: 'Já existe uma peça cadastrada com esse nome.',
-        },
-        HttpStatus.FORBIDDEN,
-      )
+      if (isRegisterExpenseInPiece) {
+        piece.save()
+        return {
+          status: HttpStatus.CREATED,
+        }
+      } else {
+        throw new HttpException(
+          {
+            message: `Já existe uma peça cadastrada com o nome ${createPieceDto.description}`,
+          },
+          HttpStatus.FORBIDDEN,
+        )
+      }
     }
   }
 

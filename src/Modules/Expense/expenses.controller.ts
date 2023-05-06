@@ -14,30 +14,30 @@ import {ExpenseService} from './expenses.service'
 
 @Controller('expense')
 export class ModelController {
-  constructor(private readonly modelService: ExpenseService) {}
+  constructor(private readonly modelExpense: ExpenseService) {}
 
   @Post()
   create(@Body() createModelDto: ExpenselDto) {
-    return this.modelService.create(createModelDto)
+    return this.modelExpense.create(createModelDto)
   }
 
   @Get()
   findAll(@Query() modelParam: ExpenseFilterDto) {
-    return this.modelService.findAll(modelParam)
+    return this.modelExpense.findAll(modelParam)
   }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.modelService.findOne(id)
+    return this.modelExpense.findOne(id)
   }
 
   @Put(':id')
   update(@Param('id') id: string, @Body() updateModelDto: ExpenselDto) {
-    return this.modelService.update(id, updateModelDto)
+    return this.modelExpense.update(id, updateModelDto)
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.modelService.remove(id)
+    return this.modelExpense.remove(id)
   }
 }

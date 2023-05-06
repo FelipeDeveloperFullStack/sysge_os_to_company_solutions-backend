@@ -1,19 +1,23 @@
-import {IsNotEmpty, IsString} from 'class-validator'
+import {IsOptional, IsString} from 'class-validator'
 
 export class ExpenselDto {
-  @IsNotEmpty({message: 'Expense is required'})
   @IsString()
+  @IsOptional()
   public expense: string
 
-  @IsNotEmpty({message: 'Value is required'})
   @IsString()
+  @IsOptional()
   public value: string
 
-  @IsNotEmpty({message: 'Date is required'})
   @IsString()
+  @IsOptional()
   public dateIn: string
 
-  @IsNotEmpty({message: 'Status is required'})
   @IsString()
+  @IsOptional()
+  public maturity: string
+
+  @IsString()
+  @IsOptional()
   public status: string
 }

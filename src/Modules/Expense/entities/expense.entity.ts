@@ -15,6 +15,9 @@ export class Expense {
   public dateIn: string
 
   @Prop()
+  public maturity: string
+
+  @Prop()
   public status: string
 }
 

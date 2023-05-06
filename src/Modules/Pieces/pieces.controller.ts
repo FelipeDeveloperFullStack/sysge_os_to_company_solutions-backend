@@ -21,6 +21,11 @@ export class PieceController {
     return this.piecesService.create(createPieceDto)
   }
 
+  @Post('register')
+  registerExpenseInPiece(@Body() createPieceDto: PieceDto) {
+    return this.piecesService.create(createPieceDto, true)
+  }
+
   @Get('total')
   getTotal() {
     return this.piecesService.getTotalOrderPieces()

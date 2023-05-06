@@ -54,7 +54,7 @@ export class ExpenseService {
         },
         {
           $set: {
-            expense: String(dto.expense).toUpperCase(),
+            status: String(dto.status).toUpperCase(),
           },
         },
       )
