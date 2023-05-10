@@ -15,7 +15,7 @@ export class ClientsService {
   async create(createClientDto: ClientDto) {
     createClientDto = {
       ...createClientDto,
-      name: String(createClientDto.name).toUpperCase(),
+      name: String(createClientDto.name.trim()).toUpperCase(),
     }
     const client = new this.clientModel(createClientDto)
 

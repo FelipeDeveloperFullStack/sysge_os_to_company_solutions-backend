@@ -15,7 +15,7 @@ export class ExpenseService {
   async create(dto: ExpenselDto) {
     dto = {
       ...dto,
-      expense: String(dto.expense).toUpperCase(),
+      expense: String(dto.expense.trim()).toUpperCase(),
       status: String(dto.status).toUpperCase(),
     }
     const model = new this.expenseModel(dto)

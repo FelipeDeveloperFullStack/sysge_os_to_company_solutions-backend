@@ -12,14 +12,14 @@ export class PiecesService {
     private pieceModel: Model<PieceDocument>,
   ) {}
 
-  async checkIFPieceAlreadyExists(service: PieceDto) {
+  async checkIFPieceAlreadyExists(pieceDto: PieceDto) {
     const result = await this.pieceModel.findOne({
-      description: service.description,
+      description: String(pieceDto.description).toUpperCase(),
     })
     if (result) {
-      return false
+      return true
     }
-    return true
+    return false
   }
 
   async getTotalOrderPieces() {
@@ -30,15 +30,15 @@ export class PiecesService {
   async create(createPieceDto: PieceDto, isRegisterExpenseInPiece?: boolean) {
     createPieceDto = {
       ...createPieceDto,
-      description: String(createPieceDto.description).toUpperCase(),
+      description: String(createPieceDto.description.trim()).toUpperCase(),
     }
     const piece = new this.pieceModel(createPieceDto)
 
-    const resultlreadyExists = await this.checkIFPieceAlreadyExists(
+    const resultAlreadyExists = await this.checkIFPieceAlreadyExists(
       createPieceDto,
     )
 
-    if (resultlreadyExists) {
+    if (!resultAlreadyExists) {
       try {
         piece.save()
         return {
@@ -53,19 +53,12 @@ export class PiecesService {
         )
       }
     } else {
-      if (isRegisterExpenseInPiece) {
-        piece.save()
-        return {
-          status: HttpStatus.CREATED,
-        }
-      } else {
-        throw new HttpException(
-          {
-            message: `Já existe uma peça cadastrada com o nome ${createPieceDto.description}`,
-          },
-          HttpStatus.FORBIDDEN,
-        )
-      }
+      throw new HttpException(
+        {
+          message: `Já existe uma peça cadastrada com o nome ${createPieceDto.description}`,
+        },
+        HttpStatus.FORBIDDEN,
+      )
     }
   }
 

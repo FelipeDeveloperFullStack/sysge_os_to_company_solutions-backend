@@ -30,7 +30,7 @@ export class ServiceService {
   async create(createServiceDto: ServiceDto) {
     createServiceDto = {
       ...createServiceDto,
-      description: String(createServiceDto.description).toUpperCase(),
+      description: String(createServiceDto.description.trim()).toUpperCase(),
       laudos: createServiceDto?.laudos?.map((laudo) => laudo.toUpperCase()),
     }
     const service = new this.serviceModel(createServiceDto)
