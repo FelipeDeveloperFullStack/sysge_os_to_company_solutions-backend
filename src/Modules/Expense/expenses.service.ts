@@ -1,6 +1,7 @@
 import {HttpException, HttpStatus, Injectable} from '@nestjs/common'
 import {InjectModel} from '@nestjs/mongoose'
 import {Model} from 'mongoose'
+import {formatInputPrice} from 'src/Common/Helpers/formatPrice'
 import {ExpenselDto} from './dto/expense.dto'
 import {ExpenseFilterDto} from './dto/expense.filter.dto'
 import {Expense as _Model, ModelDocument} from './entities/expense.entity'
@@ -33,6 +34,19 @@ export class ExpenseService {
         HttpStatus.FORBIDDEN,
       )
     }
+  }
+
+  async getSumTotalExpense() {
+    const result = await this.expenseModel.find()
+    const total = result.reduce((acc, item) => {
+      const {clean} = formatInputPrice(item?.value)
+      if (item.status === 'PAGO') {
+        return acc + clean
+      } else {
+        return acc
+      }
+    }, 0)
+    return {total: total}
   }
 
   async findAll(filter: ExpenseFilterDto) {

@@ -26,6 +26,11 @@ export class ModelController {
     return this.modelExpense.findAll(modelParam)
   }
 
+  @Get('total')
+  getTotalExpenses() {
+    return this.modelExpense.getSumTotalExpense()
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.modelExpense.findOne(id)
