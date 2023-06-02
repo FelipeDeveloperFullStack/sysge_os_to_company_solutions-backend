@@ -15,7 +15,8 @@ const SCOPES = ['https://www.googleapis.com/auth/drive']
 // time.
 const TOKEN_PATH = resolve('secret_google_drive/token.json')
 //const CREDENTIALS = resolve('secret_google_drive/credentials.json')
-const CREDENTIALS = resolve('secret_google_drive/private-key.json')
+
+const CREDENTIALS = resolve('secret_google_drive/credentials.json')
 
 /**
  * Create an OAuth2 client with the given credentials, and then execute the

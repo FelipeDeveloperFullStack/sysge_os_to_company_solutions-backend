@@ -12,12 +12,13 @@ export const createFolder = async ({folderName, parents}): Promise<any> => {
   const drive = google.drive({version: 'v3', auth})
   const fileMetadata = {
     name: folderName,
-    parents: parents,
+    parents: [parents],
     mimeType: 'application/vnd.google-apps.folder',
   }
   const response = await drive.files.create({
     requestBody: fileMetadata,
     supportsAllDrives: true,
+    fields: 'id',
   })
   return response
 }

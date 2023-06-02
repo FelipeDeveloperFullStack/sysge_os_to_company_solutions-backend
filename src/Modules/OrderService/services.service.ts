@@ -113,15 +113,19 @@ export class ServiceService {
       }
       const filePath = path.join(__dirname, '..', 'pdfs', filename)
       const pdfData = base64.split(';base64,').pop()
-      // const createFolderREsult = await createFolder({
-      //   folderName: 'CLIENTE DE TESTE',
-      //   parents: '1APhwQ9VzV6F5X-JQFVPU2ZC3D2Fvj9NO',
-      // })
-      // const listResult = await listFolder({
-      //   parents: '1B-VHmulJqYuuDKguD1_Uj1Zm69w5JSfK',
-      // })
+      const createFolderREsult = await createFolder({
+        folderName: 'CLIENTES',
+        parents: '1_GPF7MiJfF4z2zYW5qsnUPP6ePaidydV',
+      })
+      const listResult = await listFolder({
+        parents: '1_GPF7MiJfF4z2zYW5qsnUPP6ePaidydV',
+      })
       // const aboutResult = await about()
-      // console.log({aboutResult, createFolderREsult})
+      console.log({createFolderREsult})
+
+      /**
+       * @description Converte o base64 em arquivo .pdf
+       */
       return new Promise<void>((resolve, reject) => {
         fs.writeFile(
           filePath.concat('.pdf'),
