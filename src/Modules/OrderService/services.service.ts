@@ -7,7 +7,14 @@ import {OrderService, ServiceDocument} from './entities/service.entity'
 import * as fs from 'fs'
 import * as path from 'path'
 import {formatInputPrice} from 'src/Common/Helpers/formatPrice'
-import {createFolder, listFolder, about} from './googleDrive/gdrive'
+import {
+  createFolder,
+  listFolder,
+  about,
+  list,
+  uploadFile,
+  destroy,
+} from './googleDrive/gdrive'
 
 @Injectable()
 export class ServiceService {
@@ -104,7 +111,231 @@ export class ServiceService {
     }
   }
 
-  async savePDF(base64: string, filename: string): Promise<void> {
+  async deleteFileByStatusFolder(status: string) {}
+
+  async uploadFile(idFolder: string, fileName: string, status: string) {
+    try {
+      const result = await list({parents: idFolder})
+      const filePath = path.join(__dirname, '..', 'pdfs', fileName)
+
+      const resultFilderFileName = result.files.filter(
+        (file) => file.name === `${fileName}.pdf`,
+      )
+      if (!resultFilderFileName.length) {
+        /** Quando não encontrar o arquivo */
+        /** Fazer o upload do arquivo */
+        await uploadFile({
+          fileName: `${fileName}.pdf`,
+          filePath: `${filePath}.pdf`,
+          parents: idFolder,
+        })
+        await this.deleteFileByStatusFolder(status)
+        await this.deleteFile(fileName)
+      } else {
+        /** Quando encontrar o arquivo */
+        /** Excluir o arquivo e fazer o upload do novo arquivo */
+        const {id} = resultFilderFileName[0]
+        await destroy({fileId: id})
+        await uploadFile({
+          fileName: `${fileName}.pdf`,
+          filePath: `${filePath}.pdf`,
+          parents: idFolder,
+        })
+        await this.deleteFile(fileName)
+        await this.deleteFileByStatusFolder(status)
+      }
+    } catch (error) {
+      console.log(error)
+      throw new HttpException(
+        {
+          message: error,
+        },
+        HttpStatus.EXPECTATION_FAILED,
+      )
+    }
+  }
+
+  async createFolder(
+    idFolder: string,
+    folderName: string,
+    filename: string,
+    status: string,
+  ) {
+    try {
+      const result = await listFolder({
+        parents: idFolder,
+      })
+      const resultFolderOSPagas = result.files.filter(
+        (folder) => folder.name === folderName,
+      )
+      /** Se a pasta não existir */
+      if (!resultFolderOSPagas.length) {
+        /** Cria a pasta */
+        const {data} = await createFolder({
+          folderName,
+          parents: idFolder,
+        })
+        const id = data?.id
+        /** Faz upload do arquivo dentro da pasta */
+        await this.uploadFile(id, filename, status)
+      } else {
+        const {id} = resultFolderOSPagas[0]
+        /** Faz upload do arquivo dentro da pasta */
+        await this.uploadFile(id, filename, status)
+      }
+    } catch (error) {
+      console.log(error)
+      throw new HttpException(
+        {
+          message: error,
+        },
+        HttpStatus.EXPECTATION_FAILED,
+      )
+    }
+  }
+
+  async createFoldersToDocuments(
+    status: string,
+    typeDocument: string,
+    idFolder: string,
+    filename: string,
+  ) {
+    if (typeDocument === 'ORCAMENTO') {
+      /** Cria a pasta ORCAMENTOS */
+      await this.createFolder(idFolder, 'ORÇAMENTOS', filename, status)
+    } else {
+      if (status === 'PAGO') {
+        /** Cria a pasta O.S PAGAS */
+        await this.createFolder(idFolder, 'O.S PAGAS', filename, status)
+      }
+      if (status === 'PENDENTE') {
+        /** Cria a pasta O.S PENDENTES */
+        await this.createFolder(idFolder, 'O.S PENDENTES', filename, status)
+      }
+    }
+  }
+
+  async createFolderWithClientName(
+    id: string,
+    clientName: string,
+    status: string,
+    typeDocument: string,
+    filename: string,
+  ) {
+    // typeDocument = ORCAMENTO OU ORDEM_DE_SERVICO
+    // status = PENDENTE OU PAGO
+
+    /** Lista todas as pastas dentro da pasta CLIENTES */
+    const result = await listFolder({
+      parents: id,
+    })
+    const resultFolderClients = result.files.filter(
+      (folder) => folder.name === clientName,
+    )
+    /** Se a pasta do cliente não existir */
+    if (!resultFolderClients.length) {
+      /** Cria a pasta com o nome do cliente */
+      const {data} = await createFolder({
+        folderName: clientName,
+        parents: id,
+      })
+      const idClient = data?.id
+      /** Cria as pasta para salvar o documento de acordo com o status */
+      await this.createFoldersToDocuments(
+        status,
+        typeDocument,
+        idClient,
+        filename,
+      )
+    } else {
+      /** Quando a pasta do cliente já existir */
+      /** Cria as pasta para salvar o documento de acordo com o status */
+      await this.createFoldersToDocuments(
+        status,
+        typeDocument,
+        resultFolderClients[0]?.id,
+        filename,
+      )
+    }
+  }
+
+  async saveFileInFolderGoogleDrive(
+    clientName: string,
+    status: string,
+    typeDocument: string,
+    filename: string,
+  ) {
+    const ID_FOLDER_MAIN = process.env.ID_FOLDER_MAIN_GOOGLE_DRIVE
+
+    try {
+      /** Verifica se a pasta CLIENTES já existe */
+      const listResult = await listFolder({
+        parents: ID_FOLDER_MAIN,
+      })
+      /** Se não existir a pasta CLIENTES */
+      if (!listResult.files.length) {
+        /** Cria a pasta CLIENTES */
+        const {data} = await createFolder({
+          folderName: 'CLIENTES',
+          parents: ID_FOLDER_MAIN,
+        })
+        /** Faz o upload dentro da pasta */
+        await this.createFolderWithClientName(
+          data?.id,
+          clientName,
+          status,
+          typeDocument,
+          filename,
+        )
+      } else {
+        /** Quando existir a pasta CLIENTES */
+        const resultFilterFoldersName = listResult.files.filter(
+          (folder) => folder.name === 'CLIENTES',
+        )
+        if (resultFilterFoldersName.length) {
+          const {id} = resultFilterFoldersName[0]
+          /** Faz o upload dentro da pasta */
+          await this.createFolderWithClientName(
+            id,
+            clientName,
+            status,
+            typeDocument,
+            filename,
+          )
+        }
+      }
+    } catch (error) {
+      console.log(error)
+      throw new HttpException(
+        {
+          message: error,
+        },
+        HttpStatus.EXPECTATION_FAILED,
+      )
+    }
+  }
+
+  async deleteFile(fileName: string) {
+    const folderPath = path.join(__dirname, '..', 'pdfs')
+
+    const filePath = path.join(folderPath, `${fileName}.pdf`)
+
+    fs.unlink(filePath, (error) => {
+      if (error) {
+        console.error('Erro ao excluir o arquivo:', error)
+        return
+      }
+      console.log('Arquivo excluído com sucesso!')
+    })
+  }
+
+  async savePDF(
+    base64: string,
+    filename: string,
+    clientName: string,
+    status: string,
+    typeDocument: string,
+  ): Promise<void> {
     try {
       const folderPath = path.join(__dirname, '..', 'pdfs')
       // Cria o diretório "pdfs" caso ele não exista
@@ -113,20 +344,11 @@ export class ServiceService {
       }
       const filePath = path.join(__dirname, '..', 'pdfs', filename)
       const pdfData = base64.split(';base64,').pop()
-      const createFolderREsult = await createFolder({
-        folderName: 'CLIENTES',
-        parents: '1_GPF7MiJfF4z2zYW5qsnUPP6ePaidydV',
-      })
-      const listResult = await listFolder({
-        parents: '1_GPF7MiJfF4z2zYW5qsnUPP6ePaidydV',
-      })
-      // const aboutResult = await about()
-      console.log({createFolderREsult})
 
       /**
        * @description Converte o base64 em arquivo .pdf
        */
-      return new Promise<void>((resolve, reject) => {
+      new Promise<void>((resolve, reject) => {
         fs.writeFile(
           filePath.concat('.pdf'),
           pdfData,
@@ -140,6 +362,12 @@ export class ServiceService {
           },
         )
       })
+      return await this.saveFileInFolderGoogleDrive(
+        clientName,
+        status,
+        typeDocument,
+        filename,
+      )
     } catch (error) {
       console.log(error)
       throw new HttpException(

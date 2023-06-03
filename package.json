@@ -43,7 +43,6 @@
     "class-validator": "^0.13.2",
     "crypto": "^1.0.1",
     "crypto-js": "^4.1.1",
-    "fs": "^0.0.1-security",
     "google-auth-library": "^8.7.0",
     "googleapis": "^118.0.0",
     "handlebars": "^4.7.7",

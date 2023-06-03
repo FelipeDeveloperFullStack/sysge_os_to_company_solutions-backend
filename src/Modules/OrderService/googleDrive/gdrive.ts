@@ -1,4 +1,4 @@
-import fs from 'fs'
+import * as fs from 'fs'
 import {google} from 'googleapis'
 import {authorizeToken} from './gdrive-auth'
 import crypto from 'crypto'
@@ -41,7 +41,7 @@ export const uploadFile = async ({fileName, filePath, parents}) => {
         parents: [parents],
       },
       media: {
-        mimeType: 'image/png',
+        mimeType: 'application/pdf',
         body: fs.createReadStream(filePath),
       },
       supportsAllDrives: true,

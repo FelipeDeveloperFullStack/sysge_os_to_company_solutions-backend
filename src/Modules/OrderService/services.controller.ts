@@ -36,10 +36,23 @@ export class ServiceController {
   @Post('generate/pdf')
   @HttpCode(HttpStatus.OK)
   async generatePDF(
-    @Body() data: {base64Pdf: string; fileName: string},
+    @Body()
+    data: {
+      base64Pdf: string
+      fileName: string
+      clientName: string
+      status: string
+      typeDocument: string
+    },
   ): Promise<void> {
     try {
-      await this.serviceService.savePDF(data.base64Pdf, data.fileName)
+      await this.serviceService.savePDF(
+        data.base64Pdf,
+        data.fileName,
+        data.clientName,
+        data.status,
+        data.typeDocument,
+      )
     } catch (error) {
       console.error(error)
       throw new Error('Erro ao salvar o arquivo PDF.')
