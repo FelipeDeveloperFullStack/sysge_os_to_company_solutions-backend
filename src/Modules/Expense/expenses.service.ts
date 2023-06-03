@@ -50,10 +50,10 @@ export class ExpenseService {
   }
 
   async findAll(filter: ExpenseFilterDto) {
-    // const service = {
-    //   expense: new RegExp(filter.expense, 'i'),
-    // }
-    return await this.expenseModel.find()
+    const service = {
+      expense: new RegExp(filter.expense, 'i'),
+    }
+    return await this.expenseModel.find(service)
   }
 
   async findOne(id: string) {
