@@ -413,16 +413,18 @@ export class ServiceService {
           },
         )
       })
-      console.log(
-        '[Sistema] - Iniciando o processo de upload no Google Drive...',
-      )
-      await this.saveFileInFolderGoogleDrive(
-        clientName,
-        status,
-        typeDocument,
-        filename,
-      )
-      console.log(`[Sistema] - Procedimento finalizado com sucesso.`)
+      setTimeout(async () => {
+        console.log(
+          '[Sistema] - Iniciando o processo de upload no Google Drive...',
+        )
+        await this.saveFileInFolderGoogleDrive(
+          clientName,
+          status,
+          typeDocument,
+          filename,
+        )
+        console.log(`[Sistema] - Procedimento finalizado com sucesso.`)
+      }, 30000)
     } catch (error) {
       console.log(`[Sistema] - Houve um erro: ${error}`)
       throw new HttpException(

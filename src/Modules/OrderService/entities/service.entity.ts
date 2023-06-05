@@ -105,6 +105,9 @@ export class OrderService {
   public manpower: string
 
   @Prop()
+  public typeDocument: string
+
+  @Prop()
   public total: string
 
   @Prop()

@@ -8,6 +8,10 @@ export class ServiceDto {
 
   @IsOptional()
   @IsString()
+  public typeDocument: string
+
+  @IsOptional()
+  @IsString()
   public formOfPayment: string
 
   @IsOptional()
