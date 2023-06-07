@@ -32,6 +32,10 @@ export class ServiceController {
   getTotalIncomes() {
     return this.serviceService.getSumTotalIncomes()
   }
+  @Get('total/orcamentos')
+  getTotalOrcamentos() {
+    return this.serviceService.getSumTotalOrcamento()
+  }
 
   @Post('generate/pdf')
   @HttpCode(HttpStatus.OK)

@@ -68,6 +68,19 @@ export class ServiceService {
     return {total: total}
   }
 
+  async getSumTotalOrcamento() {
+    const result = await this.serviceModel.find()
+    const total = result.reduce((acc, item) => {
+      const {clean} = formatInputPrice(item?.total)
+      if (item.typeDocument === 'ORCAMENTO') {
+        return acc + clean
+      } else {
+        return acc
+      }
+    }, 0)
+    return {total: total}
+  }
+
   async findOne(id: string) {
     return await this.serviceModel.findOne({_id: id})
   }
