@@ -26,6 +26,11 @@ export class ModelController {
     return this.modelExpense.findAll(modelParam)
   }
 
+  @Get('expired')
+  expiredExpenses() {
+    return this.modelExpense.getExpensesData()
+  }
+
   @Get('total')
   getTotalExpenses() {
     return this.modelExpense.getSumTotalExpense()

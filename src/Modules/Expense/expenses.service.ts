@@ -5,6 +5,7 @@ import {formatInputPrice} from 'src/Common/Helpers/formatPrice'
 import {ExpenselDto} from './dto/expense.dto'
 import {ExpenseFilterDto} from './dto/expense.filter.dto'
 import {Expense as _Model, ModelDocument} from './entities/expense.entity'
+import {parse, isWithinInterval, addDays} from 'date-fns'
 
 @Injectable()
 export class ExpenseService {
@@ -99,5 +100,31 @@ export class ExpenseService {
         HttpStatus.EXPECTATION_FAILED,
       )
     }
+  }
+  async getExpensesData() {
+    const today = new Date()
+    const threeDaysFromNow = addDays(today, 3)
+    let total = 0
+    let count = 0
+    const expenses = await this.expenseModel.find()
+    expenses.forEach((expense) => {
+      const maturityDate = parse(
+        expense.maturity || '',
+        'dd/MM/yyyy',
+        new Date(),
+      )
+
+      if (expense.status === 'A PAGAR') {
+        total += parseFloat(expense.value.replace('R$ ', '').replace(',', '.'))
+
+        if (
+          isWithinInterval(maturityDate, {start: today, end: threeDaysFromNow})
+        ) {
+          count++
+        }
+      }
+    })
+
+    return {total, count}
   }
 }
