@@ -4,18 +4,20 @@ import {
   Delete,
   Get,
   Param,
-  Patch,
+  Put,
   Post,
   Request,
   UseGuards,
+  Query,
 } from '@nestjs/common'
-import { EventEmitter2 } from '@nestjs/event-emitter'
-import { AuthGuard } from '@nestjs/passport'
-import { AuthService } from '../AuthToken/auth/auth.service'
-import { JwtAuthGuard } from '../AuthToken/auth/jwt-auth.guard'
-import { CreateUserDto } from './Dto/create-user.dto'
-import { UpdateUserDto } from './Dto/update-user.dto'
-import { UsersService } from './users.service'
+import {EventEmitter2} from '@nestjs/event-emitter'
+import {AuthGuard} from '@nestjs/passport'
+import {AuthService} from '../AuthToken/auth/auth.service'
+import {JwtAuthGuard} from '../AuthToken/auth/jwt-auth.guard'
+import {CreateUserDto} from './Dto/create-user.dto'
+import {UpdateUserDto} from './Dto/update-user.dto'
+import {UserFilterDto} from './Dto/user.filter.dto'
+import {UsersService} from './users.service'
 
 @Controller('users')
 export class UsersController {
@@ -33,8 +35,8 @@ export class UsersController {
 
   @UseGuards(JwtAuthGuard)
   @Get()
-  findAll() {
-    return this.usersService.findAll()
+  findAll(@Query() serviceParam: UserFilterDto) {
+    return this.usersService.findAll(serviceParam)
   }
 
   @UseGuards(AuthGuard('local'))
@@ -46,9 +48,13 @@ export class UsersController {
     return await this.authService.login(request.user)
   }
 
-  @Patch('update/:id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    // return this.usersService.update(+id, updateUserDto)
+  @Put('update/:id')
+  update(@Param('id') id: string, @Body() updateUserDto: CreateUserDto) {
+    return this.usersService.update(id, updateUserDto)
+  }
+  @Put('update/status/:id')
+  updateStatus(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+    return this.usersService.updateStatus(id, updateUserDto)
   }
 
   @Delete(':id')

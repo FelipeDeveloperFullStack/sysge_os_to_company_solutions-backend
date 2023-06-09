@@ -1,11 +1,13 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common'
-import { InjectModel } from '@nestjs/mongoose'
-import { Model } from 'mongoose'
-import { Encrypt } from 'src/Common/Helpers/encrypt'
-import { MailService } from 'src/mails/mail.service'
-import { CreateUserDto } from './Dto/create-user.dto'
-import { User, UserDocument } from './Entities/user.entity'
-import { IUserServiceCreate } from './Types'
+import {HttpException, HttpStatus, Injectable} from '@nestjs/common'
+import {InjectModel} from '@nestjs/mongoose'
+import {Model} from 'mongoose'
+import {Encrypt} from 'src/Common/Helpers/encrypt'
+import {MailService} from 'src/mails/mail.service'
+import {CreateUserDto} from './Dto/create-user.dto'
+import {UpdateUserDto} from './Dto/update-user.dto'
+import {UserFilterDto} from './Dto/user.filter.dto'
+import {User, UserDocument} from './Entities/user.entity'
+import {IUserServiceCreate} from './Types'
 
 @Injectable()
 export class UsersService {
@@ -38,7 +40,7 @@ export class UsersService {
 
     const createUser = new this.userModel(createUserDto)
 
-    const isExistCPF = await this.userModel.find({ cpf: createUserDto.cpf })
+    const isExistCPF = await this.userModel.find({cpf: createUserDto.cpf})
 
     const isExistEmail = await this.userModel.find({
       email: createUserDto.email?.trim(),
@@ -68,24 +70,28 @@ export class UsersService {
     }
   }
 
-  async findAll() {
-    const result = await this.userModel.find().exec()
-    return result
+  async findAll(serviceParam: UserFilterDto) {
+    const users = {
+      name: new RegExp(serviceParam.name, 'i'),
+    }
+    return await this.userModel.find(users)
+    // const result = await this.userModel.find().exec()
+    //return result
   }
 
   async findOne(email: string): Promise<User | undefined> {
-    const result = await this.userModel.findOne({ email })
+    const result = await this.userModel.findOne({email})
     return result
   }
 
   async findByToken(token: string) {
-    return await this.userModel.findOne({ token })
+    return await this.userModel.findOne({token})
   }
 
   async updateTokenUser(token: string) {
     try {
       await this.userModel.updateOne(
-        { token },
+        {token},
         {
           $set: {
             isTokenValidated: true,
@@ -97,7 +103,75 @@ export class UsersService {
     }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} user`
+  async update(id: string, userDto: CreateUserDto) {
+    try {
+      const token = Math.floor(Math.random() * 99999).toString()
+      userDto = await this.encryptPassword(userDto, token)
+
+      await this.userModel.updateOne(
+        {
+          _id: id,
+        },
+        {
+          $set: {
+            name: String(userDto.name).toUpperCase(),
+            email: String(userDto.email),
+            cpf: String(userDto.cpf),
+            typeUser: String(userDto.typeUser).toUpperCase(),
+            password: String(userDto.password).toUpperCase(),
+          },
+        },
+      )
+      return {
+        status: HttpStatus.OK,
+      }
+    } catch (error) {
+      throw new HttpException(
+        {
+          message: error,
+        },
+        HttpStatus.EXPECTATION_FAILED,
+      )
+    }
+  }
+  async updateStatus(id: string, userDto: UpdateUserDto) {
+    try {
+      await this.userModel.updateOne(
+        {
+          _id: id,
+        },
+        {
+          $set: {
+            status: String(userDto.status).toUpperCase(),
+          },
+        },
+      )
+      return {
+        status: HttpStatus.OK,
+      }
+    } catch (error) {
+      throw new HttpException(
+        {
+          message: error,
+        },
+        HttpStatus.EXPECTATION_FAILED,
+      )
+    }
+  }
+
+  async remove(id: number) {
+    try {
+      await this.userModel.deleteOne({_id: id})
+      return {
+        status: HttpStatus.OK,
+      }
+    } catch (error) {
+      throw new HttpException(
+        {
+          message: error,
+        },
+        HttpStatus.EXPECTATION_FAILED,
+      )
+    }
   }
 }
