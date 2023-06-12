@@ -8,18 +8,17 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common'
-import { EventEmitter2 } from '@nestjs/event-emitter'
-import EventsGateway from 'src/Whatsapp/Events/events.gateway'
-import { JwtAuthGuard } from '../Authentication/AuthToken/auth/jwt-auth.guard'
-import { ConnectionWhatsAppService } from './connection-whats-app.service'
-import { CreateConnectionWhatsAppDto } from './dto/create-connection-whats-app.dto'
-import { UpdateConnectionWhatsAppDto } from './dto/update-connection-whats-app.dto'
+import {EventEmitter2} from '@nestjs/event-emitter'
+import {JwtAuthGuard} from '../Authentication/AuthToken/auth/jwt-auth.guard'
+import {ConnectionWhatsAppService} from './connection-whats-app.service'
+import {CreateConnectionWhatsAppDto} from './dto/create-connection-whats-app.dto'
+import {UpdateConnectionWhatsAppDto} from './dto/update-connection-whats-app.dto'
 
 @Controller('connection-whats-app')
 export class ConnectionWhatsAppController {
   constructor(
     private readonly connectionWhatsAppService: ConnectionWhatsAppService,
-    private eventEmitter: EventEmitter2
+    private eventEmitter: EventEmitter2,
   ) {}
 
   @Post('create')
@@ -30,7 +29,7 @@ export class ConnectionWhatsAppController {
 
   @Post('webhook')
   webhook(@Body() data: any) {
-    if (data?.wook !== 'QRCODE') console.log({ webhook: data })
+    if (data?.wook !== 'QRCODE') console.log({webhook: data})
     this.eventEmitter.emit(data?.wook, data)
   }
 

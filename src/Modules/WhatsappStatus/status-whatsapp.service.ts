@@ -1,6 +1,5 @@
 import {Injectable} from '@nestjs/common'
 import {OnEvent} from '@nestjs/event-emitter'
-import EventsGateway from 'src/Whatsapp/Events/events.gateway'
 import {
   AUTO_CLOSE_CALLED,
   CONNECTED,
@@ -12,7 +11,7 @@ import {
 
 @Injectable()
 export class WhatsappStatusService {
-  constructor(private eventGateway: EventsGateway) {}
+  constructor(private eventGateway: any) {}
 
   @OnEvent(STATUS_CONNECT)
   onStatus(data: any) {

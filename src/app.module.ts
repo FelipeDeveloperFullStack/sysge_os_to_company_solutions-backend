@@ -14,10 +14,6 @@ import {ModelsModule} from './Modules/Model/models.module'
 import {PiecesModule} from './modules/Pieces/pieces.module'
 import {ServicesModule} from './modules/Service/services.module'
 import {OrderServicesModule} from './modules/OrderService/services.module'
-import {ConnectionWhatsAppModule} from './Modules/WhatsappConnection/connection-whats-app.module'
-import {WhatsappMessageService} from './Modules/WhatsappMessage/whatsapp-message.service'
-import {WhatsappQrcodeService} from './modules/WhatsappQrcode/whatsapp-qrcode.service'
-import {WhatsappStatusService} from './Modules/WhatsappStatus/status-whatsapp.service'
 import {ExpensesModule} from './Modules/Expense/expenses.module'
 
 @Module({
@@ -47,7 +43,6 @@ import {ExpensesModule} from './Modules/Expense/expenses.module'
     MongodbModule,
     ConnectionUserWaModule,
     MailModule,
-    ConnectionWhatsAppModule,
     AuthorizationModule,
     AuthModule,
     ClientsModule,
@@ -59,10 +54,6 @@ import {ExpensesModule} from './Modules/Expense/expenses.module'
     ExpensesModule,
   ],
   controllers: [],
-  providers: [
-    WhatsappStatusService,
-    WhatsappMessageService,
-    WhatsappQrcodeService,
-  ],
+  providers: [],
 })
 export class AppModule {}

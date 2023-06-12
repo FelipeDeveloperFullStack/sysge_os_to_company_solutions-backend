@@ -1,9 +1,8 @@
-import { Injectable } from '@nestjs/common'
-import { InjectModel } from '@nestjs/mongoose'
-import { Model } from 'mongoose'
-import EventsGateway from 'src/Whatsapp/Events/events.gateway'
-import { CreateConnectionWhatsAppDto } from './dto/create-connection-whats-app.dto'
-import { UpdateConnectionWhatsAppDto } from './dto/update-connection-whats-app.dto'
+import {Injectable} from '@nestjs/common'
+import {InjectModel} from '@nestjs/mongoose'
+import {Model} from 'mongoose'
+import {CreateConnectionWhatsAppDto} from './dto/create-connection-whats-app.dto'
+import {UpdateConnectionWhatsAppDto} from './dto/update-connection-whats-app.dto'
 import {
   ConnectionWhatsApp,
   ConnectionWhatsAppDocument,
@@ -14,7 +13,7 @@ export class ConnectionWhatsAppService {
   constructor(
     @InjectModel(ConnectionWhatsApp.name)
     private connectionWhatsAppModel: Model<ConnectionWhatsAppDocument>,
-    private eventGateway: EventsGateway,
+    private eventGateway: any,
   ) {}
 
   async create(

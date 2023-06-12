@@ -1,8 +1,7 @@
-import { Module } from '@nestjs/common'
-import { MongooseModule } from '@nestjs/mongoose'
-import EventsGateway from 'src/Whatsapp/Events/events.gateway'
-import { ConnectionWhatsAppController } from './connection-whats-app.controller'
-import { ConnectionWhatsAppService } from './connection-whats-app.service'
+import {Module} from '@nestjs/common'
+import {MongooseModule} from '@nestjs/mongoose'
+import {ConnectionWhatsAppController} from './connection-whats-app.controller'
+import {ConnectionWhatsAppService} from './connection-whats-app.service'
 import {
   ConenctionWhatsAppSchema,
   ConnectionWhatsApp,
@@ -11,10 +10,10 @@ import {
 @Module({
   imports: [
     MongooseModule.forFeature([
-      { name: ConnectionWhatsApp.name, schema: ConenctionWhatsAppSchema },
+      {name: ConnectionWhatsApp.name, schema: ConenctionWhatsAppSchema},
     ]),
   ],
   controllers: [ConnectionWhatsAppController],
-  providers: [ConnectionWhatsAppService, EventsGateway],
+  providers: [ConnectionWhatsAppService],
 })
 export class ConnectionWhatsAppModule {}
