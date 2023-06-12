@@ -12,6 +12,7 @@ import {HttpCode} from '@nestjs/common/decorators'
 import {HttpStatus} from '@nestjs/common/enums'
 import {ServiceDto} from './dto/service.dto'
 import {ServiceFilterDto} from './dto/service.filter.dto'
+import {moveFileFolderClientByStatus} from './googleDrive/moveFileFolderClient'
 import {ServiceService} from './services.service'
 
 @Controller('orderServices')
@@ -32,9 +33,20 @@ export class ServiceController {
   getTotalIncomes() {
     return this.serviceService.getSumTotalIncomes()
   }
+
   @Get('total/orcamentos')
   getTotalOrcamentos() {
     return this.serviceService.getSumTotalOrcamento()
+  }
+
+  @Get('move-file-by-status')
+  moveFileByStatusDocument(@Query() data: any) {
+    return moveFileFolderClientByStatus(
+      data.fileName,
+      data.status,
+      data.typeDocument,
+      data.fileName,
+    )
   }
 
   @Post('generate/pdf')
