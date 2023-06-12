@@ -18,10 +18,6 @@ import {ConnectionWhatsAppModule} from './Modules/WhatsappConnection/connection-
 import {WhatsappMessageService} from './Modules/WhatsappMessage/whatsapp-message.service'
 import {WhatsappQrcodeService} from './modules/WhatsappQrcode/whatsapp-qrcode.service'
 import {WhatsappStatusService} from './Modules/WhatsappStatus/status-whatsapp.service'
-import {ConnectionService} from './Whatsapp/Connection/connection.service'
-import EventsGateway from './Whatsapp/Events/events.gateway'
-import {EventsModule} from './Whatsapp/Events/events.module'
-import {EventsService} from './Whatsapp/Events/events.service'
 import {ExpensesModule} from './Modules/Expense/expenses.module'
 
 @Module({
@@ -54,7 +50,6 @@ import {ExpensesModule} from './Modules/Expense/expenses.module'
     ConnectionWhatsAppModule,
     AuthorizationModule,
     AuthModule,
-    EventsModule,
     ClientsModule,
     PiecesModule,
     ServicesModule,
@@ -65,9 +60,6 @@ import {ExpensesModule} from './Modules/Expense/expenses.module'
   ],
   controllers: [],
   providers: [
-    EventsService,
-    EventsGateway,
-    ConnectionService,
     WhatsappStatusService,
     WhatsappMessageService,
     WhatsappQrcodeService,
