@@ -52,6 +52,25 @@ export const uploadFile = async ({fileName, filePath, parents}) => {
   }
 }
 
+export const moveFile = async ({fileId, newParents, removeParents}) => {
+  const auth = await authorizeToken()
+
+  const drive = google.drive({version: 'v3', auth})
+
+  try {
+    const res = await drive.files.update({
+      fileId: fileId,
+      addParents: newParents,
+      removeParents,
+      supportsAllDrives: true,
+    })
+
+    return res.data
+  } catch (error) {
+    console.log(error)
+  }
+}
+
 /**
  * Listar nome dos arquivos
  * @param parents ID da pasta que será listada

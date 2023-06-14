@@ -330,12 +330,13 @@ export class ServiceService {
     filename: string,
   ) {
     const ID_FOLDER_MAIN = process.env.ID_FOLDER_MAIN_GOOGLE_DRIVE
-
+    console.log({ID_FOLDER_MAIN})
     try {
       console.log('[Sistema] - Verificando se a pasta CLIENTES já existe...')
       const listResult = await listFolder({
         parents: ID_FOLDER_MAIN,
       })
+      console.log({listResult})
       /** Se não existir a pasta CLIENTES */
       if (!listResult.files.length) {
         console.log('[Sistema] - Criando a pasta CLIENTES...')

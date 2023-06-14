@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common'
 import {HttpCode} from '@nestjs/common/decorators'
 import {HttpStatus} from '@nestjs/common/enums'
+import {DocumentChangeStatusDto} from './dto/documentChangeStatus.dto'
 import {ServiceDto} from './dto/service.dto'
 import {ServiceFilterDto} from './dto/service.filter.dto'
 import {moveFileFolderClientByStatus} from './googleDrive/moveFileFolderClient'
@@ -40,9 +41,9 @@ export class ServiceController {
   }
 
   @Get('move-file-by-status')
-  moveFileByStatusDocument(@Query() data: any) {
+  moveFileByStatusDocument(@Query() data: DocumentChangeStatusDto) {
     return moveFileFolderClientByStatus(
-      data.fileName,
+      data.clientName,
       data.status,
       data.typeDocument,
       data.fileName,
