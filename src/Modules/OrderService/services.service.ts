@@ -336,7 +336,6 @@ export class ServiceService {
       const listResult = await listFolder({
         parents: ID_FOLDER_MAIN,
       })
-      console.log({listResult})
       /** Se não existir a pasta CLIENTES */
       if (!listResult.files.length) {
         console.log('[Sistema] - Criando a pasta CLIENTES...')
