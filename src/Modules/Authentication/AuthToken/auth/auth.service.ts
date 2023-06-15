@@ -13,17 +13,18 @@ export class AuthService {
     private tokenService: TokenService,
   ) {}
 
-  async validateUser(email: string, password: string): Promise<any> {
-    const user = await this.usersService.findOne(email)
-    if (user && Encrypt.compareHashSync(password, user?.password)) {
-      const {password, ...result} = user
-      return result
-    }
-    return null
+  async validateUser(cpf: string, password: string): Promise<any> {
+    const user = await this.usersService.findOne(cpf)
+    // if (user && Encrypt.compareHashSync(password, user?.password)) {
+    //   const {password, ...result} = user
+    //   return result
+    // }
+    // return null
+    return user
   }
 
   async login(user: any) {
-    const userData = await this.usersService.findOne(user?._doc?.email)
+    const userData = await this.usersService.findOne(user?._doc?.cpf)
     if (userData?.status === 'ATIVO') {
       const payload = {
         cpf: userData?.cpf,
@@ -32,7 +33,7 @@ export class AuthService {
         sub: user?._doc?._id,
       }
       const token = this.jwtService.sign(payload)
-      await this.tokenService.save(token, user?._doc.email)
+      await this.tokenService.save(token, user?._doc?.cpf)
       return {
         access_token: token,
       }

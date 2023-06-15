@@ -6,7 +6,7 @@ export class CreateUserDto {
   @IsString({message: 'Nome precisa ser uma string'})
   public name: string
 
-  @IsNotEmpty({message: 'E-mail obrigatório!'})
+  @IsOptional()
   @IsString({message: 'E-mail precisa ser uma string'})
   public email: string
 

@@ -35,18 +35,23 @@ export class UsersService {
   async create(
     createUserDto: CreateUserDto,
   ): Promise<User | IUserServiceCreate> {
-    const token = Math.floor(Math.random() * 99999).toString()
-    createUserDto = await this.encryptPassword(createUserDto, token)
+    // const token = Math.floor(Math.random() * 99999).toString()
+    //createUserDto = await this.encryptPassword(createUserDto, token)
 
-    const createUser = new this.userModel(createUserDto)
+    const dataUser = {
+      ...createUserDto,
+      name: String(createUserDto.name).toUpperCase(),
+    }
+
+    const createUser = new this.userModel(dataUser)
 
     const isExistCPF = await this.userModel.find({cpf: createUserDto.cpf})
 
-    const isExistEmail = await this.userModel.find({
-      email: createUserDto.email?.trim(),
-    })
+    // const isExistEmail = await this.userModel.find({
+    //   email: createUserDto.email?.trim(),
+    // })
 
-    if (isExistCPF?.length || isExistEmail?.length) {
+    if (isExistCPF?.length) {
       throw new HttpException(
         {
           message: 'Esse usuário já está cadastrado',
@@ -79,8 +84,8 @@ export class UsersService {
     //return result
   }
 
-  async findOne(email: string): Promise<User | undefined> {
-    const result = await this.userModel.findOne({email})
+  async findOne(cpf: string): Promise<User | undefined> {
+    const result = await this.userModel.findOne({cpf})
     return result
   }
 
@@ -105,8 +110,8 @@ export class UsersService {
 
   async update(id: string, userDto: CreateUserDto) {
     try {
-      const token = Math.floor(Math.random() * 99999).toString()
-      userDto = await this.encryptPassword(userDto, token)
+      //const token = Math.floor(Math.random() * 99999).toString()
+      // userDto = await this.encryptPassword(userDto, token)
 
       await this.userModel.updateOne(
         {

@@ -33,7 +33,7 @@ export class UsersController {
     return this.usersService.create(createUserDto)
   }
 
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard)
   @Get()
   findAll(@Query() serviceParam: UserFilterDto) {
     return this.usersService.findAll(serviceParam)
