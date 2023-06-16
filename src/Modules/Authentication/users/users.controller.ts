@@ -39,7 +39,7 @@ export class UsersController {
     return this.usersService.findAll(serviceParam)
   }
 
-  @UseGuards(AuthGuard('local'))
+  //@UseGuards(AuthGuard('local'))
   @Post('auth/login')
   async login(@Request() request) {
     /**
