@@ -31,6 +31,8 @@ export class AuthService {
         name: userData?.name,
         username: user?._doc?.email,
         sub: user?._doc?._id,
+        permission: userData?.permissions,
+        typeUser: userData?.typeUser,
       }
       const token = this.jwtService.sign(payload)
       await this.tokenService.save(token, user?._doc?.cpf)

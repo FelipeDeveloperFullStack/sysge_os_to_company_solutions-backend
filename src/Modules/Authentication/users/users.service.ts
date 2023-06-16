@@ -120,10 +120,11 @@ export class UsersService {
         {
           $set: {
             name: String(userDto.name).toUpperCase(),
-            email: String(userDto.email),
-            cpf: String(userDto.cpf),
+            email: userDto.email,
+            cpf: userDto.cpf,
             typeUser: String(userDto.typeUser).toUpperCase(),
-            password: String(userDto.password).toUpperCase(),
+            password: userDto.password,
+            permissions: userDto.permissions,
           },
         },
       )
