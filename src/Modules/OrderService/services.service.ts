@@ -6,6 +6,7 @@ import {ServiceFilterDto} from './dto/service.filter.dto'
 import {OrderService, ServiceDocument} from './entities/service.entity'
 import * as fs from 'fs'
 import * as path from 'path'
+import {format} from 'date-fns'
 import {formatInputPrice} from 'src/Common/Helpers/formatPrice'
 import {
   createFolder,
@@ -15,12 +16,16 @@ import {
   uploadFile,
   destroy,
 } from './googleDrive/gdrive'
+import {ServiceUpdateFileStatusDto} from './dto/service.updateFileStatus.dto'
+import {Server, Socket} from 'socket.io'
+import {SocketService} from 'src/Socket/socket.service'
 
 @Injectable()
 export class ServiceService {
   constructor(
     @InjectModel(OrderService.name)
     private serviceModel: Model<ServiceDocument>,
+    private readonly socketService: SocketService,
   ) {}
 
   async create(createServiceDto: ServiceDto) {
@@ -86,6 +91,31 @@ export class ServiceService {
   }
 
   async update(id: string, updateServiceDto: ServiceDto) {
+    try {
+      await this.serviceModel.updateOne(
+        {
+          _id: id,
+        },
+        {
+          $set: updateServiceDto,
+        },
+      )
+      return {
+        status: HttpStatus.OK,
+      }
+    } catch (error) {
+      throw new HttpException(
+        {
+          message: error,
+        },
+        HttpStatus.EXPECTATION_FAILED,
+      )
+    }
+  }
+  async updateFileStatus(
+    id: string,
+    updateServiceDto: ServiceUpdateFileStatusDto,
+  ) {
     try {
       await this.serviceModel.updateOne(
         {
@@ -392,7 +422,13 @@ export class ServiceService {
     })
   }
 
+  async getCurrentDateAndHour() {
+    const now = new Date()
+    return format(now, 'dd/MM/yyyy HH:mm')
+  }
+
   async savePDF(
+    id: string,
     base64: string,
     filename: string,
     clientName: string,
@@ -437,9 +473,19 @@ export class ServiceService {
           filename,
         )
         console.log(`[Sistema] - Procedimento finalizado com sucesso.`)
+        await this.updateFileStatus(id, {
+          dateGeneratedOS: await this.getCurrentDateAndHour(),
+        })
+
+        /** Send socket to Frontend */
+        const io = this.socketService.getIo()
+        io.emit('update-os-orcamento', 'updateFileStatus')
       }, 30000)
     } catch (error) {
       console.log(`[Sistema] - Houve um erro: ${error}`)
+      await this.updateFileStatus(id, {
+        dateGeneratedOS: 'HOUVE UM ERRO, TENTE NOVAMENTE',
+      })
       throw new HttpException(
         {
           message: error,

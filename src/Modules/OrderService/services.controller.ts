@@ -49,12 +49,22 @@ export class ServiceController {
       data.fileName,
     )
   }
+  @Delete('delete-document')
+  deleteDocument(@Query() data: DocumentChangeStatusDto) {
+    return moveFileFolderClientByStatus(
+      data.clientName,
+      data.status,
+      data.typeDocument,
+      data.fileName,
+    )
+  }
 
   @Post('generate/pdf')
   @HttpCode(HttpStatus.OK)
   async generatePDF(
     @Body()
     data: {
+      id: string
       base64Pdf: string
       fileName: string
       clientName: string
@@ -64,6 +74,7 @@ export class ServiceController {
   ): Promise<void> {
     try {
       await this.serviceService.savePDF(
+        data.id,
         data.base64Pdf,
         data.fileName,
         data.clientName,

@@ -1,5 +1,6 @@
 import {Module} from '@nestjs/common'
 import {MongooseModule} from '@nestjs/mongoose'
+import {SocketService} from 'src/Socket/socket.service'
 import {OrderService, ServiceSchema} from './entities/service.entity'
 import {ServiceController} from './services.controller'
 import {ServiceService} from './services.service'
@@ -11,7 +12,7 @@ import {ServiceService} from './services.service'
     ]),
   ],
   controllers: [ServiceController],
-  providers: [ServiceService],
+  providers: [ServiceService, SocketService],
   exports: [ServiceService],
 })
 export class OrderServicesModule {}
