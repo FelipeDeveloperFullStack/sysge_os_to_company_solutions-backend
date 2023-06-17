@@ -11,7 +11,7 @@ export class CreateUserDto {
   public email: string
 
   @IsNotEmpty({message: 'CPF obrigatório!'})
-  public cpf: number
+  public cpf: string
 
   @IsNotEmpty({message: 'Senha obrigatório!'})
   @IsString({message: 'E-mail precisa ser uma string'})

@@ -13,7 +13,7 @@ export class User {
   public email: string
 
   @Prop()
-  public cpf: number
+  public cpf: string
 
   @Prop()
   public password: string
