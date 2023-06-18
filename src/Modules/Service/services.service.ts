@@ -31,7 +31,7 @@ export class ServiceService {
     createServiceDto = {
       ...createServiceDto,
       description: String(createServiceDto.description.trim()).toUpperCase(),
-      laudos: createServiceDto?.laudos?.map((laudo) => laudo.toUpperCase()),
+      laudos: createServiceDto?.laudos?.map((laudo) => laudo),
     }
     const service = new this.serviceModel(createServiceDto)
     const resultAlreadyExists = await this.checkIFServiceAlreadyExists(
@@ -83,9 +83,7 @@ export class ServiceService {
         {
           $set: {
             description: String(updateServiceDto.description).toUpperCase(),
-            laudos: updateServiceDto.laudos?.map((laudo) =>
-              String(laudo).toUpperCase(),
-            ),
+            laudos: updateServiceDto.laudos?.map((laudo) => String(laudo)),
             value: updateServiceDto.value,
           },
         },

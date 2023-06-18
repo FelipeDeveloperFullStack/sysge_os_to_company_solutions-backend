@@ -414,12 +414,28 @@ export class ServiceService {
 
     const filePath = path.join(folderPath, `${fileName}.pdf`)
 
-    fs.unlink(filePath, (error) => {
+    fs.access(filePath, fs.constants.F_OK, (error) => {
       if (error) {
-        console.error('Erro ao excluir o arquivo:', error)
+        console.error('O arquivo não existe:', error)
         return
       }
+
+      fs.unlink(filePath, (error) => {
+        if (error) {
+          console.error('Erro ao excluir o arquivo:', error)
+          return
+        }
+
+        console.log('Arquivo excluído com sucesso:', filePath)
+      })
     })
+
+    // fs.unlink(filePath, (error) => {
+    //   if (error) {
+    //     console.error('Erro ao excluir o arquivo:', error)
+    //     return
+    //   }
+    // })
   }
 
   async getCurrentDateAndHour() {

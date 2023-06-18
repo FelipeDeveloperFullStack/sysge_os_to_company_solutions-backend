@@ -1,7 +1,7 @@
 import {IsEmail, IsNotEmpty, IsOptional, IsString} from 'class-validator'
 
 export class ClientDto {
-  @IsNotEmpty({message: 'Name is required'})
+  @IsString({message: 'Nome precisa ser texto'})
   public name: string
 
   @IsString()
@@ -16,7 +16,7 @@ export class ClientDto {
   @IsString()
   public cpfOrCnpj: string | number
 
-  @IsEmail()
+  @IsString()
   public email: string
 
   @IsString()
