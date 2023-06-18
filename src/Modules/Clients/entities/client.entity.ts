@@ -31,6 +31,21 @@ export class Client {
 
   @Prop()
   public cep: string
+
+  @Prop()
+  public idFolderOsPagas: string
+
+  @Prop()
+  public idFolderOsPendentes: string
+
+  @Prop()
+  public idFolderOsUnificadas: string
+
+  @Prop()
+  public idFolderOrcamento: string
+
+  @Prop()
+  public idFolderClientName: string
 }
 
 export const ClientSchema = SchemaFactory.createForClass(Client)

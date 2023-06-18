@@ -7,6 +7,26 @@ export class ClientDto {
   @IsString()
   public address: string
 
+  @IsOptional()
+  @IsString()
+  public idFolderOsPagas: string
+
+  @IsOptional()
+  @IsString()
+  public idFolderOsPendentes: string
+
+  @IsOptional()
+  @IsString()
+  public idFolderOsUnificadas: string
+
+  @IsOptional()
+  @IsString()
+  public idFolderOrcamento: string
+
+  @IsOptional()
+  @IsString()
+  public idFolderClientName: string
+
   @IsString()
   public city: string
 

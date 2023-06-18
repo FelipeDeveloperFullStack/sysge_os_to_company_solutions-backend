@@ -360,7 +360,6 @@ export class ServiceService {
     filename: string,
   ) {
     const ID_FOLDER_MAIN = process.env.ID_FOLDER_MAIN_GOOGLE_DRIVE
-    console.log({ID_FOLDER_MAIN})
     try {
       console.log('[Sistema] - Verificando se a pasta CLIENTES já existe...')
       const listResult = await listFolder({
@@ -489,6 +488,7 @@ export class ServiceService {
           filename,
         )
         console.log(`[Sistema] - Procedimento finalizado com sucesso.`)
+        console.log(`✅-----------------------------------✅`)
         await this.updateFileStatus(id, {
           dateGeneratedOS: await this.getCurrentDateAndHour(),
         })
