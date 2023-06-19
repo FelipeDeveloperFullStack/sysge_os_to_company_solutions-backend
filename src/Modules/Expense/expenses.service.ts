@@ -5,7 +5,7 @@ import {formatInputPrice} from 'src/Common/Helpers/formatPrice'
 import {ExpenselDto} from './dto/expense.dto'
 import {ExpenseFilterDto} from './dto/expense.filter.dto'
 import {Expense as _Model, ModelDocument} from './entities/expense.entity'
-import {parse, isWithinInterval, addDays} from 'date-fns'
+import {parse, isWithinInterval, addDays, isBefore} from 'date-fns'
 
 @Injectable()
 export class ExpenseService {
@@ -106,6 +106,7 @@ export class ExpenseService {
     const threeDaysFromNow = addDays(today, 3)
     let total = 0
     let count = 0
+    let expiredTotal = 0
     const expenses = await this.expenseModel.find()
     expenses.forEach((expense) => {
       const maturityDate = parse(
@@ -115,8 +116,15 @@ export class ExpenseService {
       )
 
       if (expense.status === 'A PAGAR') {
-        total += parseFloat(expense.value.replace('R$ ', '').replace(',', '.'))
-
+        if (isBefore(maturityDate, today)) {
+          expiredTotal += parseFloat(
+            expense.value.replace('R$ ', '').replace(',', '.'),
+          )
+        } else {
+          total += parseFloat(
+            expense.value.replace('R$ ', '').replace(',', '.'),
+          )
+        }
         if (
           isWithinInterval(maturityDate, {start: today, end: threeDaysFromNow})
         ) {
@@ -125,6 +133,6 @@ export class ExpenseService {
       }
     })
 
-    return {total, count}
+    return {total, count, expiredTotal}
   }
 }
