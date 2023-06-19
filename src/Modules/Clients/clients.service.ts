@@ -1,7 +1,11 @@
 import {HttpException, HttpStatus, Injectable} from '@nestjs/common'
 import {InjectModel} from '@nestjs/mongoose'
 import {Model} from 'mongoose'
-import {createFolder, listFolder} from '../OrderService/googleDrive/gdrive'
+import {
+  createFolder,
+  listFolder,
+  destroy,
+} from '../OrderService/googleDrive/gdrive'
 import {ClientDto} from './dto/client.dto'
 import {ClientFilterDto} from './dto/client.filter.dto'
 import {Client, ClientDocument} from './entities/client.entity'
@@ -167,9 +171,14 @@ export class ClientsService {
     }
   }
 
-  async remove(id: string) {
+  async remove(id: string, idFolderClientName: string) {
     try {
+      console.log(`[Sistema] - Excluindo os dados do cliente ${id}...`)
       await this.clientModel.deleteOne({_id: id})
+      console.log(`[Sistema] - Excluindo a pasta do cliente no Google Drive`)
+      await destroy({fileId: idFolderClientName})
+      console.log(`[Sistema] - Procedimento finalizado.`)
+      console.log(`✅-----------------------------------✅`)
       return {
         status: HttpStatus.CREATED,
       }

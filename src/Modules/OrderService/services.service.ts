@@ -19,6 +19,9 @@ import {
 import {ServiceUpdateFileStatusDto} from './dto/service.updateFileStatus.dto'
 import {Server, Socket} from 'socket.io'
 import {SocketService} from 'src/Socket/socket.service'
+import {ClientsService} from '../Clients/clients.service'
+import {DocumentChangeStatusDto} from './dto/documentChangeStatus.dto'
+import {moveFileGoogleDrive} from './googleDrive/moveFileFolderClient'
 
 @Injectable()
 export class ServiceService {
@@ -26,6 +29,7 @@ export class ServiceService {
     @InjectModel(OrderService.name)
     private serviceModel: Model<ServiceDocument>,
     private readonly socketService: SocketService,
+    private readonly clientsService: ClientsService,
   ) {}
 
   async create(createServiceDto: ServiceDto) {
@@ -53,6 +57,32 @@ export class ServiceService {
       //laudoService: new RegExp(serviceFilter.laudoService, 'i'),
     }
     return await this.serviceModel.find(service)
+  }
+
+  async moveFileGoogleDrive(data: DocumentChangeStatusDto) {
+    const resultClient = await this.clientsService.findOne(data.clientId)
+    if (data.typeDocument === 'ORCAMENTO') {
+      await moveFileGoogleDrive(
+        data.idFileCreatedGoogleDrive,
+        [resultClient?.idFolderOrcamento],
+        [resultClient?.idFolderOsPagas, resultClient?.idFolderOsPendentes],
+      )
+    } else {
+      if (data.status === 'PAGO') {
+        await moveFileGoogleDrive(
+          data.idFileCreatedGoogleDrive,
+          [resultClient?.idFolderOsPagas],
+          [resultClient?.idFolderOrcamento, resultClient?.idFolderOsPendentes],
+        )
+      }
+      if (data.status === 'PENDENTE') {
+        await moveFileGoogleDrive(
+          data.idFileCreatedGoogleDrive,
+          [resultClient?.idFolderOsPendentes],
+          [resultClient?.idFolderOsPagas, resultClient?.idFolderOrcamento],
+        )
+      }
+    }
   }
 
   async getTotalOrderService() {
@@ -112,6 +142,7 @@ export class ServiceService {
       )
     }
   }
+
   async updateFileStatus(
     id: string,
     updateServiceDto: ServiceUpdateFileStatusDto,
@@ -137,10 +168,66 @@ export class ServiceService {
       )
     }
   }
-
-  async remove(id: string) {
+  async updateIdFileCreatedGoogleDrive(
+    id: string,
+    idFileCreatedGoogleDrive: string,
+  ) {
     try {
+      await this.serviceModel.updateOne(
+        {
+          _id: id,
+        },
+        {
+          $set: {
+            idFileCreatedGoogleDrive,
+          },
+        },
+      )
+      return {
+        status: HttpStatus.OK,
+      }
+    } catch (error) {
+      throw new HttpException(
+        {
+          message: error,
+        },
+        HttpStatus.EXPECTATION_FAILED,
+      )
+    }
+  }
+
+  async deleteOSByClientId(clientId: string) {
+    try {
+      const resultOrderService = await this.serviceModel.find()
+      resultOrderService.forEach(async (os) => {
+        if (os.client.id === clientId) {
+          await this.serviceModel.deleteOne({_id: os._id})
+        }
+      })
+    } catch (error) {
+      throw new HttpException(
+        {
+          message: error,
+        },
+        HttpStatus.EXPECTATION_FAILED,
+      )
+    }
+  }
+
+  async remove(id: string, idFileCreatedGoogleDrive?: string) {
+    try {
+      console.log(`[Sistema] - Excluindo a Ordem de Servico/Orcamento ${id}...`)
       await this.serviceModel.deleteOne({_id: id})
+      if (idFileCreatedGoogleDrive !== 'undefined') {
+        console.log(`[Sistema] - Excluindo o arquivo do Google Drive...`)
+        await destroy({fileId: idFileCreatedGoogleDrive})
+      } else {
+        console.log(
+          `[Sistema] - ID do arquivo não vinculado a Ordem de Servico/Orcamento`,
+        )
+      }
+      console.log(`[Sistema] - Procedimento finalizado com sucesso.`)
+      console.log(`✅-----------------------------------✅`)
       return {
         status: HttpStatus.CREATED,
       }
@@ -191,7 +278,12 @@ export class ServiceService {
     }
   }
 
-  async uploadFile(idFolder: string, fileName: string, status: string) {
+  async uploadFile(
+    idFolder: string,
+    fileName: string,
+    status: string,
+    idOrderService?: string,
+  ) {
     try {
       const result = await list({parents: idFolder})
       const filePath = path.join(__dirname, '..', 'pdfs', fileName)
@@ -205,12 +297,19 @@ export class ServiceService {
         console.log(
           `[Sistema] - Fazendo o upload do arquivo ${fileName} no Google drive...`,
         )
-        await uploadFile({
+        const resultFileCreated = await uploadFile({
           fileName: `${fileName}.pdf`,
           filePath: `${filePath}.pdf`,
           parents: idFolder,
         })
         await this.deleteFile(fileName)
+        const idFileCreated = resultFileCreated.id
+        if (idOrderService) {
+          await this.updateIdFileCreatedGoogleDrive(
+            idOrderService,
+            idFileCreated,
+          )
+        }
       } else {
         /** Quando encontrar o arquivo */
         /** Excluir o arquivo e fazer o upload do novo arquivo */
@@ -219,12 +318,19 @@ export class ServiceService {
         console.log(
           `[Sistema] - Fazendo o upload do arquivo ${fileName} no Google drive...`,
         )
-        await uploadFile({
+        const resultFileCreated = await uploadFile({
           fileName: `${fileName}.pdf`,
           filePath: `${filePath}.pdf`,
           parents: idFolder,
         })
         await this.deleteFile(fileName)
+        const idFileCreated = resultFileCreated.id
+        if (idOrderService) {
+          await this.updateIdFileCreatedGoogleDrive(
+            idOrderService,
+            idFileCreated,
+          )
+        }
       }
     } catch (error) {
       console.log(error)
@@ -353,6 +459,64 @@ export class ServiceService {
     }
   }
 
+  async saveFilerGoogleDrive(
+    status: string,
+    typeDocument: string,
+    filename: string,
+    idFolderOsPagas: string,
+    idFolderOsPendentes: string,
+    idFolderOrcamento: string,
+    idFolderOsUnificadas: string,
+    idFolderClientName: string,
+    idOrderService: string,
+  ) {
+    try {
+      if (typeDocument === 'ORCAMENTO') {
+        await this.uploadFile(
+          idFolderOrcamento,
+          filename,
+          status,
+          idOrderService,
+        )
+      } else {
+        if (status === 'PAGO') {
+          await this.uploadFile(
+            idFolderOsPagas,
+            filename,
+            status,
+            idOrderService,
+          )
+          await this.deleteFileByStatusFolder(
+            'O.S PENDENTES',
+            idFolderClientName,
+            filename,
+          )
+        }
+        if (status === 'PENDENTE') {
+          await this.uploadFile(
+            idFolderOsPendentes,
+            filename,
+            status,
+            idOrderService,
+          )
+          await this.deleteFileByStatusFolder(
+            'O.S PAGAS',
+            idFolderClientName,
+            filename,
+          )
+        }
+      }
+    } catch (error) {
+      console.log(error)
+      throw new HttpException(
+        {
+          message: error,
+        },
+        HttpStatus.EXPECTATION_FAILED,
+      )
+    }
+  }
+
   async saveFileInFolderGoogleDrive(
     clientName: string,
     status: string,
@@ -442,7 +606,10 @@ export class ServiceService {
     return format(now, 'dd/MM/yyyy HH:mm')
   }
 
-  async savePDF(
+  /**
+   * @description Antiga função para salvar o documento do drive. Não está sendo mais usado.
+   */
+  async savePDF_old(
     id: string,
     base64: string,
     filename: string,
@@ -502,6 +669,96 @@ export class ServiceService {
       await this.updateFileStatus(id, {
         dateGeneratedOS: 'HOUVE UM ERRO, TENTE NOVAMENTE',
       })
+      throw new HttpException(
+        {
+          message: error,
+        },
+        HttpStatus.EXPECTATION_FAILED,
+      )
+    }
+  }
+
+  async savePDF(
+    idOrderService: string,
+    base64: string,
+    filename: string,
+    clientName: string,
+    status: string,
+    typeDocument: string,
+    idClient: string,
+  ): Promise<void> {
+    try {
+      const folderPath = path.join(__dirname, '..', 'pdfs')
+      // Cria o diretório "pdfs" caso ele não exista
+      if (!fs.existsSync(folderPath)) {
+        fs.mkdirSync(folderPath)
+      }
+      console.log(
+        `[Sistema] - Convertendo o arquivo ${filename} de base64 em PDF...`,
+      )
+      const filePath = path.join(__dirname, '..', 'pdfs', filename)
+      const pdfData = base64.split(';base64,').pop()
+
+      /**
+       * @description Converte o base64 em arquivo .pdf
+       */
+      console.log(`[Sistema] - Salvando o arquivo ${filename} no servidor...`)
+      new Promise<void>((resolve, reject) => {
+        fs.writeFile(
+          filePath.concat('.pdf'),
+          pdfData,
+          {encoding: 'base64'},
+          (err) => {
+            if (err) {
+              reject(err)
+            } else {
+              resolve()
+            }
+          },
+        )
+      })
+      console.log(
+        '[Sistema] - Iniciando o processo de upload no Google Drive...',
+      )
+      console.log('[Sistema] - Buscando o ID da pasta do cliente...')
+
+      const resultClient = await this.clientsService.findOne(idClient)
+      const idFolderOsPagas = resultClient?.idFolderOsPagas
+      const idFolderClientName = resultClient?.idFolderClientName
+      const idFolderOsPendentes = resultClient?.idFolderOsPendentes
+      const idFolderOrcamento = resultClient?.idFolderOrcamento
+      const idFolderOsUnificadas = resultClient?.idFolderOsUnificadas
+
+      await this.saveFilerGoogleDrive(
+        status,
+        typeDocument,
+        filename,
+        idFolderOsPagas,
+        idFolderOsPendentes,
+        idFolderOrcamento,
+        idFolderOsUnificadas,
+        idFolderClientName,
+        idOrderService,
+      )
+      console.log(`[Sistema] - Procedimento finalizado com sucesso.`)
+      console.log(`✅-----------------------------------✅`)
+      await this.updateFileStatus(idOrderService, {
+        dateGeneratedOS: await this.getCurrentDateAndHour(),
+      })
+
+      /** Send socket to Frontend */
+      const io = this.socketService.getIo()
+      io.emit('update-os-orcamento', 'updateFileStatus')
+    } catch (error) {
+      console.log(`[Sistema] - Houve um erro: ${error}`)
+      await this.updateFileStatus(idOrderService, {
+        dateGeneratedOS: 'HOUVE UM ERRO',
+      })
+
+      /** Send socket to Frontend */
+      const io = this.socketService.getIo()
+      io.emit('update-os-orcamento', 'updateFileStatus')
+      await this.deleteFile(filename)
       throw new HttpException(
         {
           message: error,

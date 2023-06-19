@@ -1,9 +1,12 @@
 import {Prop, Schema, SchemaFactory} from '@nestjs/mongoose'
 import {Document} from 'mongoose'
-import {ClientT, ItemPieces, ItemServices, Laudo} from '../dto/type'
+//import {ClientT, ItemPieces, ItemServices, Laudo} from '../dto/type'
 export type ServiceDocument = OrderService & Document
 
 class Client {
+  @Prop()
+  id?: string
+
   @Prop()
   name?: string
 
@@ -115,6 +118,9 @@ export class OrderService {
 
   @Prop()
   public discount: string
+
+  @Prop()
+  public idFileCreatedGoogleDrive: string
 }
 
 export const ServiceSchema = SchemaFactory.createForClass(OrderService)

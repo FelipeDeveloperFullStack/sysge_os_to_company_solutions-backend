@@ -41,8 +41,11 @@ export class ClientsController {
     return this.clientsService.update(id, updateClientDto)
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.clientsService.remove(id)
+  @Delete(':id/:idFolderClientName')
+  remove(
+    @Param('id') id: string,
+    @Param('idFolderClientName') idFolderClientName: string,
+  ) {
+    return this.clientsService.remove(id, idFolderClientName)
   }
 }

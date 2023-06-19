@@ -8,6 +8,7 @@ export interface ClientT {
   city?: string
   uf?: string
   cep?: string
+  id?: string
 }
 
 export type ItemServices = {

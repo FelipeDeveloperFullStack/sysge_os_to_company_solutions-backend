@@ -13,7 +13,6 @@ import {HttpStatus} from '@nestjs/common/enums'
 import {DocumentChangeStatusDto} from './dto/documentChangeStatus.dto'
 import {ServiceDto} from './dto/service.dto'
 import {ServiceFilterDto} from './dto/service.filter.dto'
-import {moveFileFolderClientByStatus} from './googleDrive/moveFileFolderClient'
 import {ServiceService} from './services.service'
 
 @Controller('orderServices')
@@ -42,22 +41,18 @@ export class ServiceController {
 
   @Get('move-file-by-status')
   moveFileByStatusDocument(@Query() data: DocumentChangeStatusDto) {
-    return moveFileFolderClientByStatus(
-      data.clientName,
-      data.status,
-      data.typeDocument,
-      data.fileName,
-    )
+    return this.serviceService.moveFileGoogleDrive(data)
   }
-  @Delete('delete-document')
-  deleteDocument(@Query() data: DocumentChangeStatusDto) {
-    return moveFileFolderClientByStatus(
-      data.clientName,
-      data.status,
-      data.typeDocument,
-      data.fileName,
-    )
-  }
+
+  // @Delete('delete-document')
+  // deleteDocument(@Query() data: DocumentChangeStatusDto) {
+  //   return moveFileFolderClientByStatus(
+  //     data.clientName,
+  //     data.status,
+  //     data.typeDocument,
+  //     data.fileName,
+  //   )
+  // }
 
   @Post('generate/pdf')
   @HttpCode(HttpStatus.OK)
@@ -70,6 +65,7 @@ export class ServiceController {
       clientName: string
       status: string
       typeDocument: string
+      idClient: string
     },
   ): Promise<void> {
     try {
@@ -80,6 +76,7 @@ export class ServiceController {
         data.clientName,
         data.status,
         data.typeDocument,
+        data.idClient,
       )
     } catch (error) {
       console.error(error)
@@ -102,8 +99,16 @@ export class ServiceController {
     return this.serviceService.update(id, updateServiceDto)
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.serviceService.remove(id)
+  @Delete(':id/:idFileCreatedGoogleDrive')
+  remove(
+    @Param('id') id: string,
+    @Param('idFileCreatedGoogleDrive') idFileCreatedGoogleDrive: string,
+  ) {
+    return this.serviceService.remove(id, idFileCreatedGoogleDrive)
+  }
+
+  @Delete(':clientId')
+  deleteOSByClientId(@Param('clientId') clientId: string) {
+    return this.serviceService.deleteOSByClientId(clientId)
   }
 }

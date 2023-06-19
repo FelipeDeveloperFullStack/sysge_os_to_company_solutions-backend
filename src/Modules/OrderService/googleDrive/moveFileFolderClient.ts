@@ -97,75 +97,20 @@ const createFolder = async (
   }
 }
 
-export const moveFileFolderClientByStatus = async (
-  clientName: string,
-  status: string,
-  typeDocument: string,
-  filename: string,
+export const moveFileGoogleDrive = async (
+  fileId: string,
+  newParents: string[],
+  removeParents: string[],
 ) => {
-  const ID_FOLDER_MAIN = process.env.ID_FOLDER_MAIN_GOOGLE_DRIVE
-
   try {
-    console.log('[Sistema] - Verificando se a pasta CLIENTES já existe...')
-    const listResult = await listFolder({
-      parents: ID_FOLDER_MAIN,
+    console.log('[Sistema] - Movendo o arquivo de pasta no Google Drive...')
+    await moveFile({
+      fileId,
+      newParents,
+      removeParents,
     })
-    if (listResult.files.length) {
-      /** Quando existir a pasta CLIENTES */
-      const resultFilterFoldersName = listResult.files.filter(
-        (folder) => folder.name === 'CLIENTES',
-      )
-      console.log({resultFilterFoldersName})
-      if (resultFilterFoldersName.length) {
-        const {id} = resultFilterFoldersName[0]
-        const result = await listFolder({
-          parents: id,
-        })
-        console.log(
-          `[Sistema] - Verificando se a pasta do cliente ${clientName} já existe...`,
-        )
-        const resultFolderClients = result.files.filter(
-          (folder) => folder.name?.trim() === clientName?.trim(),
-        )
-        console.log({resultFolderClients})
-        if (resultFolderClients.length) {
-          if (typeDocument === 'ORCAMENTO') {
-            console.log({typeDocument})
-          }
-          if (status === 'PAGO') {
-            console.log({status})
-            // await createFolder(
-            //   resultFolderClients[0].id,
-            //   'O.S PENDENTES',
-            //   filename,
-            //   status,
-            // )
-            await moveFile({
-              fileId: '1weaxbdYyseCpSHl1N4aGCLPOL9WWWwtK',
-              newParents: '1Q3Nwf-x5K7aeiHfJy0ipoIUFz1NgtSvh',
-              removeParents: '1UsIhZjirJ7ijDSXOxvQG8Tx7ua7n_O2Q',
-            })
-            //await this.deleteFileByStatusFolder('O.S PAGAS', idFolder, filename)
-          }
-          if (status === 'PENDENTE') {
-            /** Enviar para a pasta de OS PAGOS */
-            // await createFolder(
-            //   resultFolderClients[0].id,
-            //   'O.S PAGAS',
-            //   filename,
-            //   status,
-            // )
-            // await this.deleteFileByStatusFolder('O.S PAGAS', idFolder, filename)
-            await moveFile({
-              fileId: '1weaxbdYyseCpSHl1N4aGCLPOL9WWWwtK',
-              newParents: '1Q3Nwf-x5K7aeiHfJy0ipoIUFz1NgtSvh',
-              removeParents: '1UsIhZjirJ7ijDSXOxvQG8Tx7ua7n_O2Q',
-            })
-            console.log({status})
-          }
-        }
-      }
-    }
+    console.log(`[Sistema] - Procedimento finalizado com sucesso.`)
+    console.log(`✅-----------------------------------✅`)
   } catch (error) {
     console.log(error)
     throw new HttpException(

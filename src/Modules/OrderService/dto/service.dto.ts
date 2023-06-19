@@ -85,4 +85,8 @@ export class ServiceDto {
   @IsOptional()
   @IsString()
   public total: string
+
+  @IsOptional()
+  @IsString()
+  public idFileCreatedGoogleDrive: string
 }

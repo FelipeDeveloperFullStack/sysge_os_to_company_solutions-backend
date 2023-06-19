@@ -1,5 +1,7 @@
-import {Module} from '@nestjs/common'
+import {forwardRef, Module} from '@nestjs/common'
 import {MongooseModule} from '@nestjs/mongoose'
+import {OrderServicesModule} from '../OrderService/services.module'
+import {ServiceService} from '../OrderService/services.service'
 import {ClientsController} from './clients.controller'
 import {ClientsService} from './clients.service'
 import {Client, ClientSchema} from './entities/client.entity'
@@ -7,6 +9,7 @@ import {Client, ClientSchema} from './entities/client.entity'
 @Module({
   imports: [
     MongooseModule.forFeature([{name: Client.name, schema: ClientSchema}]),
+    forwardRef(() => OrderServicesModule),
   ],
   controllers: [ClientsController],
   providers: [ClientsService],
