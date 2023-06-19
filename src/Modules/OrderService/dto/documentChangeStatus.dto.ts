@@ -2,6 +2,9 @@ import {IsOptional} from 'class-validator'
 
 export class DocumentChangeStatusDto {
   @IsOptional()
+  public id: string
+
+  @IsOptional()
   public idFileCreatedGoogleDrive: string
 
   @IsOptional()

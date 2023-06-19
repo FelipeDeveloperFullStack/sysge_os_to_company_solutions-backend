@@ -60,28 +60,45 @@ export class ServiceService {
   }
 
   async moveFileGoogleDrive(data: DocumentChangeStatusDto) {
-    const resultClient = await this.clientsService.findOne(data.clientId)
-    if (data.typeDocument === 'ORCAMENTO') {
-      await moveFileGoogleDrive(
-        data.idFileCreatedGoogleDrive,
-        [resultClient?.idFolderOrcamento],
-        [resultClient?.idFolderOsPagas, resultClient?.idFolderOsPendentes],
-      )
+    if (data.idFileCreatedGoogleDrive) {
+      /** Send socket to Frontend */
+      const io = this.socketService.getIo()
+      io.emit('update-os-orcamento', 'updateFileStatus')
+      const resultClient = await this.clientsService.findOne(data.clientId)
+
+      if (data.typeDocument === 'ORCAMENTO') {
+        await moveFileGoogleDrive(
+          data.idFileCreatedGoogleDrive,
+          [resultClient?.idFolderOrcamento],
+          [resultClient?.idFolderOsPagas, resultClient?.idFolderOsPendentes],
+        )
+      } else {
+        if (data.status === 'PAGO') {
+          await moveFileGoogleDrive(
+            data.idFileCreatedGoogleDrive,
+            [resultClient?.idFolderOsPagas],
+            [
+              resultClient?.idFolderOrcamento,
+              resultClient?.idFolderOsPendentes,
+            ],
+          )
+        }
+        if (data.status === 'PENDENTE') {
+          await moveFileGoogleDrive(
+            data.idFileCreatedGoogleDrive,
+            [resultClient?.idFolderOsPendentes],
+            [resultClient?.idFolderOsPagas, resultClient?.idFolderOrcamento],
+          )
+        }
+      }
     } else {
-      if (data.status === 'PAGO') {
-        await moveFileGoogleDrive(
-          data.idFileCreatedGoogleDrive,
-          [resultClient?.idFolderOsPagas],
-          [resultClient?.idFolderOrcamento, resultClient?.idFolderOsPendentes],
-        )
-      }
-      if (data.status === 'PENDENTE') {
-        await moveFileGoogleDrive(
-          data.idFileCreatedGoogleDrive,
-          [resultClient?.idFolderOsPendentes],
-          [resultClient?.idFolderOsPagas, resultClient?.idFolderOrcamento],
-        )
-      }
+      await this.updateFileStatus(data.id, {
+        dateGeneratedOS: 'PDF AINDA NÃO EXISTE',
+      })
+
+      /** Send socket to Frontend */
+      const io = this.socketService.getIo()
+      io.emit('update-os-orcamento', 'updateFileStatus')
     }
   }
 
