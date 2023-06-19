@@ -18,7 +18,11 @@ async function bootstrap() {
   //app.useWebSocketAdapter(new SocketIOAdapter())
   const io = new Server(app.getHttpServer(), {
     cors: {
-      origin: 'http://localhost:3000', // Adicione a origem do seu frontend aqui
+      origin: [
+        'http://localhost:3000',
+        'http://191.223.83.246:3000',
+        'http://191.223.83.246:8080',
+      ], // Adicione a origem do seu frontend aqui
       methods: ['*'], // Adicione os métodos permitidos
       allowedHeaders: ['Content-Type'], // Adicione os cabeçalhos permitidos
     },
