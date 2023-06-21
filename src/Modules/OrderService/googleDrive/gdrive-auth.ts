@@ -7,6 +7,7 @@ import open from 'open'
 import url from 'url'
 import destroyer from 'server-destroy'
 import http from 'http'
+import {isDevelopmentEnvironment} from 'src/Common/Functions'
 
 // If modifying these scopes, delete token.json.
 const SCOPES = ['https://www.googleapis.com/auth/drive']
@@ -74,7 +75,19 @@ function getAccessToken(oAuth2Client, callback) {
 
 export const authorizeToken_ = async (): Promise<any> => {
   // Load client secrets from a local file.
-  const credentials = JSON.parse(fs.readFileSync(CREDENTIALS).toString())
+  let credentials = null
+  if (isDevelopmentEnvironment()) {
+    // Development Environment
+    const CREDENTIALS_DEVELOPMENT = resolve(
+      'secret_google_drive/credentials_conta_felipe.json',
+    )
+    credentials = JSON.parse(
+      fs.readFileSync(CREDENTIALS_DEVELOPMENT).toString(),
+    )
+  } else {
+    // Prodution environment
+    credentials = JSON.parse(fs.readFileSync(CREDENTIALS).toString())
+  }
   // Configuração do JWT
   const auth = new JWT({
     email: credentials.client_email,
@@ -124,9 +137,15 @@ export const authorizeToken_ = async (): Promise<any> => {
 }
 
 export const authorizeToken = async () => {
+  let credentials = null
+  if (isDevelopmentEnvironment()) {
+    credentials = resolve('secret_google_drive/credentials_conta_felipe.json')
+  } else {
+    credentials = CREDENTIALS
+  }
   try {
     const auth = new google.auth.GoogleAuth({
-      keyFile: CREDENTIALS,
+      keyFile: credentials,
       scopes: ['https://www.googleapis.com/auth/drive'],
     })
     return auth

@@ -22,6 +22,7 @@ import {SocketService} from 'src/Socket/socket.service'
 import {ClientsService} from '../Clients/clients.service'
 import {DocumentChangeStatusDto} from './dto/documentChangeStatus.dto'
 import {moveFileGoogleDrive} from './googleDrive/moveFileFolderClient'
+import {isDevelopmentEnvironment} from 'src/Common/Functions'
 
 @Injectable()
 export class ServiceService {
@@ -540,7 +541,9 @@ export class ServiceService {
     typeDocument: string,
     filename: string,
   ) {
-    const ID_FOLDER_MAIN = process.env.ID_FOLDER_MAIN_GOOGLE_DRIVE
+    const ID_FOLDER_MAIN = isDevelopmentEnvironment()
+      ? process.env.ID_FOLDER_MAIN_GOOGLE_DRIVE_DEVELOPMENT
+      : process.env.ID_FOLDER_MAIN_GOOGLE_DRIVE
     try {
       console.log('[Sistema] - Verificando se a pasta CLIENTES já existe...')
       const listResult = await listFolder({

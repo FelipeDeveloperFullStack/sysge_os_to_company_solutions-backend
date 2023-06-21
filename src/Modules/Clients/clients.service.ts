@@ -1,6 +1,7 @@
 import {HttpException, HttpStatus, Injectable} from '@nestjs/common'
 import {InjectModel} from '@nestjs/mongoose'
 import {Model} from 'mongoose'
+import {isDevelopmentEnvironment} from 'src/Common/Functions'
 import {
   createFolder,
   listFolder,
@@ -311,7 +312,9 @@ export class ClientsService {
     client: ClientDto,
     idClientCreated: string,
   ) {
-    const ID_FOLDER_MAIN = process.env.ID_FOLDER_MAIN_GOOGLE_DRIVE
+    const ID_FOLDER_MAIN = isDevelopmentEnvironment()
+      ? process.env.ID_FOLDER_MAIN_GOOGLE_DRIVE_DEVELOPMENT
+      : process.env.ID_FOLDER_MAIN_GOOGLE_DRIVE
     try {
       console.log('[Sistema] - Verificando se a pasta CLIENTES já existe...')
       const listResult = await listFolder({
