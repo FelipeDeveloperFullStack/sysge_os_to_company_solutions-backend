@@ -16,25 +16,6 @@ export class ConnectionWhatsAppService {
     private eventGateway: any,
   ) {}
 
-  async create(
-    createConnectionWhatsAppDto: CreateConnectionWhatsAppDto,
-  ): Promise<ConnectionWhatsApp> {
-    const createConnectionWhatsApp = new this.connectionWhatsAppModel(
-      createConnectionWhatsAppDto,
-    )
-
-    try {
-      await createConnectionWhatsApp.save()
-      this.eventGateway.socket.emit('connectionWhatsAppService.create', {
-        status: 'created',
-      })
-      return createConnectionWhatsApp
-    } catch (error) {
-      console.trace(error)
-      return error
-    }
-  }
-
   async findAll() {
     return await this.connectionWhatsAppModel.find().exec()
   }

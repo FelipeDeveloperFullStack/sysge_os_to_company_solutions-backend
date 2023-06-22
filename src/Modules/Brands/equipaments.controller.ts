@@ -11,10 +11,16 @@ import {
 import {EquipamentService} from './equipaments.service'
 import {EquipamentDto} from './dto/equipament.dto'
 import {EquipamentFilterDto} from './dto/equipament.filter.dto'
+import {readEmailsWithAttachments} from 'src/Automations/Nubank'
 
 @Controller('equipaments')
 export class EquipamentController {
   constructor(private readonly equipamentService: EquipamentService) {}
+
+  @Get('start/nubank')
+  startAutomationNubank() {
+    readEmailsWithAttachments()
+  }
 
   @Post()
   create(@Body() createEquipamentDto: EquipamentDto) {
