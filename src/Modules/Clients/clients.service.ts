@@ -1,4 +1,4 @@
-import {HttpException, HttpStatus, Injectable} from '@nestjs/common'
+import {HttpException, HttpStatus, Injectable, Logger} from '@nestjs/common'
 import {InjectModel} from '@nestjs/mongoose'
 import {Model} from 'mongoose'
 import {isDevelopmentEnvironment} from 'src/Common/Functions'
@@ -18,6 +18,8 @@ type IdFolderToDocument = {
 
 @Injectable()
 export class ClientsService {
+  private logger = new Logger()
+
   constructor(
     @InjectModel(Client.name)
     private clientModel: Model<ClientDocument>,
@@ -174,12 +176,14 @@ export class ClientsService {
 
   async remove(id: string, idFolderClientName: string) {
     try {
-      console.log(`[Sistema] - Excluindo os dados do cliente ${id}...`)
+      this.logger.log(`[Sistema] - Excluindo os dados do cliente ${id}...`)
       await this.clientModel.deleteOne({_id: id})
-      console.log(`[Sistema] - Excluindo a pasta do cliente no Google Drive`)
+      this.logger.log(
+        `[Sistema] - Excluindo a pasta do cliente no Google Drive`,
+      )
       await destroy({fileId: idFolderClientName})
-      console.log(`[Sistema] - Procedimento finalizado.`)
-      console.log(`✅-----------------------------------✅`)
+      this.logger.log(`[Sistema] - Procedimento finalizado.`)
+      this.logger.log(`✅-----------------------------------✅`)
       return {
         status: HttpStatus.CREATED,
       }
@@ -222,7 +226,7 @@ export class ClientsService {
         }
       }
     } catch (error) {
-      console.log(error)
+      this.logger.log(error)
       throw new HttpException(
         {
           message: error,
@@ -236,22 +240,22 @@ export class ClientsService {
     idFolderClientName: string,
     idClientCreated: string,
   ) {
-    console.log(`[Sistema] - Criando a pasta O.S PAGAS.`)
+    this.logger.log(`[Sistema] - Criando a pasta O.S PAGAS.`)
     const resultOSPagas = await this.createFolder(
       idFolderClientName,
       'O.S PAGAS',
     )
-    console.log(`[Sistema] - Criando a pasta O.S PENDENTES`)
+    this.logger.log(`[Sistema] - Criando a pasta O.S PENDENTES`)
     const resultOsPendentes = await this.createFolder(
       idFolderClientName,
       'O.S PENDENTES',
     )
-    console.log(`[Sistema] - Criando a pasta O.S UNIFICADAS.`)
+    this.logger.log(`[Sistema] - Criando a pasta O.S UNIFICADAS.`)
     const resultOsUnificadas = await this.createFolder(
       idFolderClientName,
       'O.S UNIFICADAS',
     )
-    console.log(`[Sistema] - Criando a pasta ORÇAMENTOS.`)
+    this.logger.log(`[Sistema] - Criando a pasta ORÇAMENTOS.`)
     const resultOrcamentos = await this.createFolder(
       idFolderClientName,
       'ORÇAMENTOS',
@@ -265,8 +269,8 @@ export class ClientsService {
       resultOrcamentos.idFolderToDocument,
       idFolderClientName,
     )
-    console.log(`[Sistema] - Procedimento finalizado.`)
-    console.log(`✅-----------------------------------✅`)
+    this.logger.log(`[Sistema] - Procedimento finalizado.`)
+    this.logger.log(`✅-----------------------------------✅`)
   }
 
   async createFolderWithClientName(
@@ -284,7 +288,7 @@ export class ClientsService {
     /** Se a pasta do cliente não existir */
     if (!resultFolderClients.length) {
       /** Cria a pasta com o nome do cliente */
-      console.log(
+      this.logger.log(
         `[Sistema] - Criando a pasta com o nome do cliente: ${clientName}`,
       )
       const {data} = await createFolder({
@@ -316,13 +320,15 @@ export class ClientsService {
       ? process.env.ID_FOLDER_MAIN_GOOGLE_DRIVE_DEVELOPMENT
       : process.env.ID_FOLDER_MAIN_GOOGLE_DRIVE
     try {
-      console.log('[Sistema] - Verificando se a pasta CLIENTES já existe...')
+      this.logger.log(
+        '[Sistema] - Verificando se a pasta CLIENTES já existe...',
+      )
       const listResult = await listFolder({
         parents: ID_FOLDER_MAIN,
       })
       /** Se não existir a pasta CLIENTES */
       if (!listResult.files.length) {
-        console.log('[Sistema] - Criando a pasta CLIENTES...')
+        this.logger.log('[Sistema] - Criando a pasta CLIENTES...')
         const {data} = await createFolder({
           folderName: 'CLIENTES',
           parents: ID_FOLDER_MAIN,
@@ -349,7 +355,7 @@ export class ClientsService {
         }
       }
     } catch (error) {
-      console.log(error)
+      this.logger.log(error)
       throw new HttpException(
         {
           message: error,

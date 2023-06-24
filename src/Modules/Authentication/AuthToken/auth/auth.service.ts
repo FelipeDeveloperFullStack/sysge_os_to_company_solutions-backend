@@ -1,12 +1,15 @@
-import {Injectable} from '@nestjs/common'
+import {Injectable, Logger} from '@nestjs/common'
 import {UnauthorizedException} from '@nestjs/common/exceptions/unauthorized.exception'
 import {JwtService} from '@nestjs/jwt'
-import {Encrypt} from 'src/Common/Helpers/encrypt'
+// import {Encrypt} from 'src/Common/Helpers/encrypt'
 import {TokenService} from 'src/Modules/Authentication/AuthToken/Token/token.service'
 import {UsersService} from '../../users/users.service'
+import * as fs from 'fs'
 
 @Injectable()
 export class AuthService {
+  private logger = new Logger()
+
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
@@ -23,7 +26,21 @@ export class AuthService {
     return user
   }
 
+  async readIPFromFile() {
+    try {
+      const data = fs.readFileSync('ip.json', 'utf-8')
+      const ipData = JSON.parse(data)
+      return ipData?.ip
+    } catch (error) {
+      this.logger.error(error)
+    }
+  }
+
   async login(user: any) {
+    let ip = undefined
+    if (fs.existsSync('ip.json')) {
+      ip = await this.readIPFromFile()
+    }
     const userData = await this.usersService.findOne(user?._doc?.cpf)
     if (userData?.status === 'ATIVO') {
       const payload = {
@@ -33,6 +50,7 @@ export class AuthService {
         sub: user?._doc?._id,
         permission: userData?.permissions,
         typeUser: userData?.typeUser,
+        ip,
       }
       const token = this.jwtService.sign(payload)
       await this.tokenService.save(token, user?._doc?.cpf)

@@ -1,4 +1,4 @@
-import {HttpException, HttpStatus, Injectable} from '@nestjs/common'
+import {HttpException, HttpStatus, Injectable, Logger} from '@nestjs/common'
 import {InjectModel} from '@nestjs/mongoose'
 import {Model} from 'mongoose'
 import {ServiceDto} from './dto/service.dto'
@@ -26,6 +26,8 @@ import {isDevelopmentEnvironment} from 'src/Common/Functions'
 
 @Injectable()
 export class ServiceService {
+  private logger = new Logger()
+
   constructor(
     @InjectModel(OrderService.name)
     private serviceModel: Model<ServiceDocument>,
@@ -234,18 +236,20 @@ export class ServiceService {
 
   async remove(id: string, idFileCreatedGoogleDrive?: string) {
     try {
-      console.log(`[Sistema] - Excluindo a Ordem de Servico/Orcamento ${id}...`)
+      this.logger.log(
+        `[Sistema] - Excluindo a Ordem de Servico/Orcamento ${id}...`,
+      )
       await this.serviceModel.deleteOne({_id: id})
       if (idFileCreatedGoogleDrive !== 'undefined') {
-        console.log(`[Sistema] - Excluindo o arquivo do Google Drive...`)
+        this.logger.log(`[Sistema] - Excluindo o arquivo do Google Drive...`)
         await destroy({fileId: idFileCreatedGoogleDrive})
       } else {
-        console.log(
+        this.logger.log(
           `[Sistema] - ID do arquivo não vinculado a Ordem de Servico/Orcamento`,
         )
       }
-      console.log(`[Sistema] - Procedimento finalizado com sucesso.`)
-      console.log(`✅-----------------------------------✅`)
+      this.logger.log(`[Sistema] - Procedimento finalizado com sucesso.`)
+      this.logger.log(`✅-----------------------------------✅`)
       return {
         status: HttpStatus.CREATED,
       }
@@ -277,7 +281,7 @@ export class ServiceService {
         const resultList = await list({parents: id})
         resultList.files.forEach(async (file) => {
           if (file.name === `${filename}.pdf`) {
-            console.log(
+            this.logger.log(
               `[Sistema] - Arquivo ${file.name} excluido com sucesso dentro da pasta ${folderName}`,
             )
             /** Delete o arquivo */
@@ -286,7 +290,7 @@ export class ServiceService {
         })
       }
     } catch (error) {
-      console.log(error)
+      this.logger.log(error)
       throw new HttpException(
         {
           message: error,
@@ -312,7 +316,7 @@ export class ServiceService {
       if (!resultFilderFileName.length) {
         /** Quando não encontrar o arquivo */
         /** Fazer o upload do arquivo */
-        console.log(
+        this.logger.log(
           `[Sistema] - Fazendo o upload do arquivo ${fileName} no Google drive...`,
         )
         const resultFileCreated = await uploadFile({
@@ -333,7 +337,7 @@ export class ServiceService {
         /** Excluir o arquivo e fazer o upload do novo arquivo */
         const {id} = resultFilderFileName[0]
         await destroy({fileId: id})
-        console.log(
+        this.logger.log(
           `[Sistema] - Fazendo o upload do arquivo ${fileName} no Google drive...`,
         )
         const resultFileCreated = await uploadFile({
@@ -351,7 +355,7 @@ export class ServiceService {
         }
       }
     } catch (error) {
-      console.log(error)
+      this.logger.log(error)
       throw new HttpException(
         {
           message: error,
@@ -390,7 +394,7 @@ export class ServiceService {
         await this.uploadFile(id, filename, status)
       }
     } catch (error) {
-      console.log(error)
+      this.logger.log(error)
       throw new HttpException(
         {
           message: error,
@@ -408,19 +412,23 @@ export class ServiceService {
   ) {
     if (typeDocument === 'ORCAMENTO') {
       /** Cria a pasta ORCAMENTOS */
-      console.log(`[Sistema] - Verificando se pasta ORÇAMENTOS já existe...`)
+      this.logger.log(
+        `[Sistema] - Verificando se pasta ORÇAMENTOS já existe...`,
+      )
       await this.createFolder(idFolder, 'ORÇAMENTOS', filename, status)
     } else {
       if (status === 'PAGO') {
         /** Cria a pasta O.S PAGAS */
-        console.log(`[Sistema] - Verificando se pasta O.S PAGAS já existe...`)
+        this.logger.log(
+          `[Sistema] - Verificando se pasta O.S PAGAS já existe...`,
+        )
         await this.createFolder(idFolder, 'O.S PAGAS', filename, status)
         /** Deleta o arquivo dentro da pasta O.S PENDENTES para evitar ficar em duas pastas ao mesmo tempo*/
         await this.deleteFileByStatusFolder('O.S PENDENTES', idFolder, filename)
       }
       if (status === 'PENDENTE') {
         /** Cria a pasta O.S PENDENTES */
-        console.log(
+        this.logger.log(
           `[Sistema] - Verificando se pasta O.S PENDENTES já existe...`,
         )
         await this.createFolder(idFolder, 'O.S PENDENTES', filename, status)
@@ -450,7 +458,7 @@ export class ServiceService {
     /** Se a pasta do cliente não existir */
     if (!resultFolderClients.length) {
       /** Cria a pasta com o nome do cliente */
-      console.log(
+      this.logger.log(
         `[Sistema] - Criando a pasta com o nome do cliente: ${clientName}`,
       )
       const {data} = await createFolder({
@@ -525,7 +533,7 @@ export class ServiceService {
         }
       }
     } catch (error) {
-      console.log(error)
+      this.logger.log(error)
       throw new HttpException(
         {
           message: error,
@@ -545,13 +553,15 @@ export class ServiceService {
       ? process.env.ID_FOLDER_MAIN_GOOGLE_DRIVE_DEVELOPMENT
       : process.env.ID_FOLDER_MAIN_GOOGLE_DRIVE
     try {
-      console.log('[Sistema] - Verificando se a pasta CLIENTES já existe...')
+      this.logger.log(
+        '[Sistema] - Verificando se a pasta CLIENTES já existe...',
+      )
       const listResult = await listFolder({
         parents: ID_FOLDER_MAIN,
       })
       /** Se não existir a pasta CLIENTES */
       if (!listResult.files.length) {
-        console.log('[Sistema] - Criando a pasta CLIENTES...')
+        this.logger.log('[Sistema] - Criando a pasta CLIENTES...')
         const {data} = await createFolder({
           folderName: 'CLIENTES',
           parents: ID_FOLDER_MAIN,
@@ -582,7 +592,7 @@ export class ServiceService {
         }
       }
     } catch (error) {
-      console.log(error)
+      this.logger.log(error)
       throw new HttpException(
         {
           message: error,
@@ -609,7 +619,7 @@ export class ServiceService {
           return
         }
 
-        console.log('Arquivo excluído com sucesso:', filePath)
+        this.logger.log('Arquivo excluído com sucesso:', filePath)
       })
     })
 
@@ -649,7 +659,7 @@ export class ServiceService {
       /**
        * @description Converte o base64 em arquivo .pdf
        */
-      console.log('[Sistema] - Salvando o arquivo .pdf no servidor...')
+      this.logger.log('[Sistema] - Salvando o arquivo .pdf no servidor...')
       new Promise<void>((resolve, reject) => {
         fs.writeFile(
           filePath.concat('.pdf'),
@@ -665,7 +675,7 @@ export class ServiceService {
         )
       })
       setTimeout(async () => {
-        console.log(
+        this.logger.log(
           '[Sistema] - Iniciando o processo de upload no Google Drive...',
         )
         await this.saveFileInFolderGoogleDrive(
@@ -674,8 +684,8 @@ export class ServiceService {
           typeDocument,
           filename,
         )
-        console.log(`[Sistema] - Procedimento finalizado com sucesso.`)
-        console.log(`✅-----------------------------------✅`)
+        this.logger.log(`[Sistema] - Procedimento finalizado com sucesso.`)
+        this.logger.log(`✅-----------------------------------✅`)
         await this.updateFileStatus(id, {
           dateGeneratedOS: await this.getCurrentDateAndHour(),
         })
@@ -685,7 +695,7 @@ export class ServiceService {
         io.emit('update-os-orcamento', 'updateFileStatus')
       }, 30000)
     } catch (error) {
-      console.log(`[Sistema] - Houve um erro: ${error}`)
+      this.logger.log(`[Sistema] - Houve um erro: ${error}`)
       await this.updateFileStatus(id, {
         dateGeneratedOS: 'HOUVE UM ERRO, TENTE NOVAMENTE',
       })
@@ -713,7 +723,7 @@ export class ServiceService {
       if (!fs.existsSync(folderPath)) {
         fs.mkdirSync(folderPath)
       }
-      console.log(
+      this.logger.log(
         `[Sistema] - Convertendo o arquivo ${filename} de base64 em PDF...`,
       )
       const filePath = path.join(__dirname, '..', 'pdfs', filename)
@@ -722,7 +732,9 @@ export class ServiceService {
       /**
        * @description Converte o base64 em arquivo .pdf
        */
-      console.log(`[Sistema] - Salvando o arquivo ${filename} no servidor...`)
+      this.logger.log(
+        `[Sistema] - Salvando o arquivo ${filename} no servidor...`,
+      )
       new Promise<void>((resolve, reject) => {
         fs.writeFile(
           filePath.concat('.pdf'),
@@ -737,10 +749,10 @@ export class ServiceService {
           },
         )
       })
-      console.log(
+      this.logger.log(
         '[Sistema] - Iniciando o processo de upload no Google Drive...',
       )
-      console.log('[Sistema] - Buscando o ID da pasta do cliente...')
+      this.logger.log('[Sistema] - Buscando o ID da pasta do cliente...')
 
       const resultClient = await this.clientsService.findOne(idClient)
       const idFolderOsPagas = resultClient?.idFolderOsPagas
@@ -760,8 +772,8 @@ export class ServiceService {
         idFolderClientName,
         idOrderService,
       )
-      console.log(`[Sistema] - Procedimento finalizado com sucesso.`)
-      console.log(`✅-----------------------------------✅`)
+      this.logger.log(`[Sistema] - Procedimento finalizado com sucesso.`)
+      this.logger.log(`✅-----------------------------------✅`)
       await this.updateFileStatus(idOrderService, {
         dateGeneratedOS: await this.getCurrentDateAndHour(),
       })
@@ -770,7 +782,7 @@ export class ServiceService {
       const io = this.socketService.getIo()
       io.emit('update-os-orcamento', 'updateFileStatus')
     } catch (error) {
-      console.log(`[Sistema] - Houve um erro: ${error}`)
+      this.logger.log(`[Sistema] - Houve um erro: ${error}`)
       await this.updateFileStatus(idOrderService, {
         dateGeneratedOS: 'HOUVE UM ERRO',
       })

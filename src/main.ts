@@ -3,15 +3,77 @@ import {NestFactory} from '@nestjs/core'
 import {AppModule} from './app.module'
 import {json} from 'body-parser'
 import {Server} from 'socket.io'
-import {SocketIOAdapter} from './Socket/socket.io.adapter'
+import * as os from 'os'
+// import {SocketIOAdapter} from './Socket/socket.io.adapter'
+// import * as cors from 'cors'
 import {SocketService} from './Socket/socket.service'
-import * as cors from 'cors'
+import {promisify} from 'util'
+import axios from 'axios'
+import * as fs from 'fs'
+import {isDevelopmentEnvironment} from './Common/Functions'
+
+const writeFileAsync = promisify(fs.writeFile)
+
+async function getLocalIP(logger: Logger) {
+  const interfaces = os.networkInterfaces()
+  for (const interfaceName in interfaces) {
+    const interfaceData = interfaces[interfaceName]
+    for (const info of interfaceData) {
+      if (
+        info.family === 'IPv4' &&
+        !info.internal &&
+        info.address !== '127.0.0.1'
+      ) {
+        return info.address
+      }
+    }
+  }
+
+  logger.error(
+    'Could not be able do get local ip address. Please restart the server',
+  )
+  return null
+}
+
+async function getPublicIP(logger: Logger) {
+  try {
+    logger.warn('Searching public IP address, please wait...')
+    const response = await axios.get('https://api.ipify.org?format=json')
+    return response.data.ip
+  } catch (error) {
+    logger.error(
+      'An error occurred when try to search public ip address. trying again...',
+    )
+    await getPublicIP(logger)
+  }
+}
 
 async function bootstrap() {
   const PORT = process.env.PORT || 3005
   const logger = new Logger()
   const app = await NestFactory.create(AppModule)
-  //app.use(cors())
+  let publicIP = ''
+
+  if (!isDevelopmentEnvironment()) {
+    publicIP = await getPublicIP(logger)
+    if (publicIP) {
+      const ipData = {ip: publicIP}
+      await writeFileAsync('ip.json', JSON.stringify(ipData))
+      logger.debug(`Public IP address: ${publicIP}`)
+    } else {
+      logger.error(
+        'Could not be able to get public ip address. Please restart the server.',
+      )
+    }
+  } else {
+    publicIP = await getLocalIP(logger)
+    if (publicIP) {
+      const ipData = {ip: publicIP}
+      await writeFileAsync('ip.json', JSON.stringify(ipData))
+      logger.debug(`Local environmnet development IP address: ${publicIP}`)
+    }
+  }
+
   app.enableCors()
   app.useGlobalPipes(new ValidationPipe({whitelist: true, transform: true}))
   app.use(json({limit: '50mb'}))
@@ -20,8 +82,8 @@ async function bootstrap() {
     cors: {
       origin: [
         'http://localhost:3000',
-        'http://191.223.83.246:3000',
-        'http://191.223.83.246:8080',
+        publicIP ? `http://${publicIP}:3000` : undefined,
+        publicIP ? `http://${publicIP}:8080` : undefined,
       ], // Adicione a origem do seu frontend aqui
       methods: ['*'], // Adicione os métodos permitidos
       allowedHeaders: ['Content-Type'], // Adicione os cabeçalhos permitidos
