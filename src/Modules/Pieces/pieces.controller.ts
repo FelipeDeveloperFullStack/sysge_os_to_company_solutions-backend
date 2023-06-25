@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Headers,
   Param,
   Post,
   Put,
@@ -17,13 +18,13 @@ export class PieceController {
   constructor(private readonly piecesService: PiecesService) {}
 
   @Post()
-  create(@Body() createPieceDto: PieceDto) {
-    return this.piecesService.create(createPieceDto)
+  create(@Body() createPieceDto: PieceDto, @Headers('user') user: string) {
+    return this.piecesService.create(createPieceDto, user)
   }
 
   @Post('register')
   registerExpenseInPiece(@Body() createPieceDto: PieceDto) {
-    return this.piecesService.create(createPieceDto, true)
+    //return this.piecesService.create(createPieceDto, true)
   }
 
   @Get('total')
@@ -42,8 +43,12 @@ export class PieceController {
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() updatePieceDto: PieceDto) {
-    return this.piecesService.update(id, updatePieceDto)
+  update(
+    @Param('id') id: string,
+    @Body() updatePieceDto: PieceDto,
+    @Headers('user') user: string,
+  ) {
+    return this.piecesService.update(id, updatePieceDto, user)
   }
 
   @Delete(':id')

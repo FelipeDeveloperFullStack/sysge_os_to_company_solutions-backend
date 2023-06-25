@@ -46,6 +46,9 @@ export class Client {
 
   @Prop()
   public idFolderClientName: string
+
+  @Prop()
+  public user: string
 }
 
 export const ClientSchema = SchemaFactory.createForClass(Client)

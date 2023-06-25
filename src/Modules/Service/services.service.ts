@@ -27,9 +27,10 @@ export class ServiceService {
     return {total: result?.length}
   }
 
-  async create(createServiceDto: ServiceDto) {
+  async create(createServiceDto: ServiceDto, user: string) {
     createServiceDto = {
       ...createServiceDto,
+      user,
       description: String(createServiceDto.description.trim()).toUpperCase(),
       laudos: createServiceDto?.laudos?.map((laudo) => laudo),
     }
@@ -74,7 +75,7 @@ export class ServiceService {
     return await this.serviceModel.findOne({_id: id})
   }
 
-  async update(id: string, updateServiceDto: ServiceDto) {
+  async update(id: string, updateServiceDto: ServiceDto, user: string) {
     try {
       await this.serviceModel.updateOne(
         {
@@ -82,6 +83,7 @@ export class ServiceService {
         },
         {
           $set: {
+            user,
             description: String(updateServiceDto.description).toUpperCase(),
             laudos: updateServiceDto.laudos?.map((laudo) => String(laudo)),
             value: updateServiceDto.value,

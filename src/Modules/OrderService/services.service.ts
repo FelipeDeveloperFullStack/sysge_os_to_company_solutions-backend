@@ -35,7 +35,11 @@ export class ServiceService {
     private readonly clientsService: ClientsService,
   ) {}
 
-  async create(createServiceDto: ServiceDto) {
+  async create(createServiceDto: ServiceDto, user: string) {
+    createServiceDto = {
+      ...createServiceDto,
+      user,
+    }
     const service = new this.serviceModel(createServiceDto)
 
     try {
@@ -166,6 +170,7 @@ export class ServiceService {
   async updateFileStatus(
     id: string,
     updateServiceDto: ServiceUpdateFileStatusDto,
+    user?: string,
   ) {
     try {
       await this.serviceModel.updateOne(
@@ -173,7 +178,10 @@ export class ServiceService {
           _id: id,
         },
         {
-          $set: updateServiceDto,
+          $set: {
+            ...updateServiceDto,
+            user: user || '',
+          },
         },
       )
       return {
@@ -716,6 +724,7 @@ export class ServiceService {
     status: string,
     typeDocument: string,
     idClient: string,
+    user: string,
   ): Promise<void> {
     try {
       const folderPath = path.join(__dirname, '..', 'pdfs')
@@ -774,18 +783,26 @@ export class ServiceService {
       )
       this.logger.log(`[Sistema] - Procedimento finalizado com sucesso.`)
       this.logger.log(`✅-----------------------------------✅`)
-      await this.updateFileStatus(idOrderService, {
-        dateGeneratedOS: await this.getCurrentDateAndHour(),
-      })
+      await this.updateFileStatus(
+        idOrderService,
+        {
+          dateGeneratedOS: await this.getCurrentDateAndHour(),
+        },
+        user,
+      )
 
       /** Send socket to Frontend */
       const io = this.socketService.getIo()
       io.emit('update-os-orcamento', 'updateFileStatus')
     } catch (error) {
       this.logger.log(`[Sistema] - Houve um erro: ${error}`)
-      await this.updateFileStatus(idOrderService, {
-        dateGeneratedOS: 'HOUVE UM ERRO',
-      })
+      await this.updateFileStatus(
+        idOrderService,
+        {
+          dateGeneratedOS: 'HOUVE UM ERRO',
+        },
+        user,
+      )
 
       /** Send socket to Frontend */
       const io = this.socketService.getIo()

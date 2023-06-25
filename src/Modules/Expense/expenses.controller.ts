@@ -8,6 +8,7 @@ import {
   Put,
   Query,
 } from '@nestjs/common'
+import {Headers} from '@nestjs/common/decorators'
 import {ExpenselDto} from './dto/expense.dto'
 import {ExpenseFilterDto} from './dto/expense.filter.dto'
 import {ExpenseService} from './expenses.service'
@@ -17,8 +18,8 @@ export class ModelController {
   constructor(private readonly modelExpense: ExpenseService) {}
 
   @Post()
-  create(@Body() createModelDto: ExpenselDto) {
-    return this.modelExpense.create(createModelDto)
+  create(@Body() createModelDto: ExpenselDto, @Headers('user') user: string) {
+    return this.modelExpense.create(createModelDto, user)
   }
 
   @Get()
@@ -42,8 +43,12 @@ export class ModelController {
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() updateModelDto: ExpenselDto) {
-    return this.modelExpense.update(id, updateModelDto)
+  update(
+    @Param('id') id: string,
+    @Body() updateModelDto: ExpenselDto,
+    @Headers('user') user: string,
+  ) {
+    return this.modelExpense.update(id, updateModelDto, user)
   }
 
   @Delete(':id')

@@ -10,4 +10,7 @@ export class ServiceDto {
   @IsNumber()
   @IsOptional()
   public value: number
+
+  @IsOptional()
+  public user: string
 }

@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Headers,
   Param,
   Post,
   Put,
@@ -17,8 +18,8 @@ export class ServiceController {
   constructor(private readonly serviceService: ServiceService) {}
 
   @Post()
-  create(@Body() createServiceDto: ServiceDto) {
-    return this.serviceService.create(createServiceDto)
+  create(@Body() createServiceDto: ServiceDto, @Headers('user') user: string) {
+    return this.serviceService.create(createServiceDto, user)
   }
 
   @Get('total')
@@ -37,8 +38,12 @@ export class ServiceController {
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() updateServiceDto: ServiceDto) {
-    return this.serviceService.update(id, updateServiceDto)
+  update(
+    @Param('id') id: string,
+    @Body() updateServiceDto: ServiceDto,
+    @Headers('user') user: string,
+  ) {
+    return this.serviceService.update(id, updateServiceDto, user)
   }
 
   @Delete(':id')

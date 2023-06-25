@@ -121,6 +121,9 @@ export class OrderService {
 
   @Prop()
   public idFileCreatedGoogleDrive: string
+
+  @Prop()
+  public user: string
 }
 
 export const ServiceSchema = SchemaFactory.createForClass(OrderService)

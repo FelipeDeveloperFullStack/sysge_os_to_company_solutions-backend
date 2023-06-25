@@ -10,6 +10,9 @@ export class Piece {
 
   @Prop()
   public value: number
+
+  @Prop()
+  public user: string
 }
 
 export const PieceSchema = SchemaFactory.createForClass(Piece)

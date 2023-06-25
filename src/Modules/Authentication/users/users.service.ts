@@ -34,12 +34,14 @@ export class UsersService {
 
   async create(
     createUserDto: CreateUserDto,
+    user: string,
   ): Promise<User | IUserServiceCreate> {
     // const token = Math.floor(Math.random() * 99999).toString()
     //createUserDto = await this.encryptPassword(createUserDto, token)
 
     const dataUser = {
       ...createUserDto,
+      user,
       name: String(createUserDto.name).toUpperCase(),
     }
 
@@ -108,11 +110,10 @@ export class UsersService {
     }
   }
 
-  async update(id: string, userDto: CreateUserDto) {
+  async update(id: string, userDto: CreateUserDto, user: string) {
     try {
       //const token = Math.floor(Math.random() * 99999).toString()
       // userDto = await this.encryptPassword(userDto, token)
-
       await this.userModel.updateOne(
         {
           _id: id,
@@ -125,6 +126,7 @@ export class UsersService {
             typeUser: String(userDto.typeUser).toUpperCase(),
             password: userDto.password,
             permissions: userDto.permissions,
+            user,
           },
         },
       )
@@ -140,7 +142,7 @@ export class UsersService {
       )
     }
   }
-  async updateStatus(id: string, userDto: UpdateUserDto) {
+  async updateStatus(id: string, userDto: UpdateUserDto, user: string) {
     try {
       await this.userModel.updateOne(
         {
@@ -148,6 +150,7 @@ export class UsersService {
         },
         {
           $set: {
+            user,
             status: String(userDto.status).toUpperCase(),
           },
         },

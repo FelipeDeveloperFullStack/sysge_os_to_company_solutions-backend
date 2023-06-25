@@ -19,6 +19,9 @@ export class Expense {
 
   @Prop()
   public status: string
+
+  @Prop()
+  public user: string
 }
 
 export const ExpenseSchema = SchemaFactory.createForClass(Expense)

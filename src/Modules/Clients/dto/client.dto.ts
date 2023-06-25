@@ -27,6 +27,9 @@ export class ClientDto {
   @IsString()
   public idFolderClientName: string
 
+  @IsOptional()
+  public user: string
+
   @IsString()
   public city: string
 

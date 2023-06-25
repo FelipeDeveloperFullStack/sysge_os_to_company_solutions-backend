@@ -8,7 +8,7 @@ import {
   Put,
   Query,
 } from '@nestjs/common'
-import {HttpCode} from '@nestjs/common/decorators'
+import {Headers, HttpCode} from '@nestjs/common/decorators'
 import {HttpStatus} from '@nestjs/common/enums'
 import {DocumentChangeStatusDto} from './dto/documentChangeStatus.dto'
 import {ServiceDto} from './dto/service.dto'
@@ -20,8 +20,8 @@ export class ServiceController {
   constructor(private readonly serviceService: ServiceService) {}
 
   @Post()
-  create(@Body() createServiceDto: ServiceDto) {
-    return this.serviceService.create(createServiceDto)
+  create(@Body() createServiceDto: ServiceDto, @Headers('user') user: string) {
+    return this.serviceService.create(createServiceDto, user)
   }
 
   @Get('total')
@@ -67,6 +67,7 @@ export class ServiceController {
       typeDocument: string
       idClient: string
     },
+    @Headers('user') user: string,
   ): Promise<void> {
     try {
       await this.serviceService.savePDF(
@@ -77,6 +78,7 @@ export class ServiceController {
         data.status,
         data.typeDocument,
         data.idClient,
+        user,
       )
     } catch (error) {
       console.error(error)

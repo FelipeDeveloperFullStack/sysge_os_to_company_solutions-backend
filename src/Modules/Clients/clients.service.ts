@@ -25,9 +25,10 @@ export class ClientsService {
     private clientModel: Model<ClientDocument>,
   ) {}
 
-  async create(createClientDto: ClientDto) {
+  async create(createClientDto: ClientDto, user: string) {
     createClientDto = {
       ...createClientDto,
+      user,
       name: String(createClientDto.name.trim()).toUpperCase(),
     }
     const client = new this.clientModel(createClientDto)
@@ -86,7 +87,7 @@ export class ClientsService {
     return await this.clientModel.findOne({_id: id})
   }
 
-  async update(id: string, client: ClientDto) {
+  async update(id: string, client: ClientDto, user: string) {
     if (
       !client.idFolderClientName ||
       !client.idFolderOrcamento ||
@@ -109,6 +110,7 @@ export class ClientsService {
         },
         {
           $set: {
+            user,
             name: String(client.name).toUpperCase(),
             address: client.address,
             city: client.city,

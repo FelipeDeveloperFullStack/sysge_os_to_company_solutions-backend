@@ -27,9 +27,10 @@ export class PiecesService {
     return {total: result?.length}
   }
 
-  async create(createPieceDto: PieceDto, isRegisterExpenseInPiece?: boolean) {
+  async create(createPieceDto: PieceDto, user: string) {
     createPieceDto = {
       ...createPieceDto,
+      user,
       description: String(createPieceDto.description.trim()).toUpperCase(),
     }
     const piece = new this.pieceModel(createPieceDto)
@@ -74,7 +75,7 @@ export class PiecesService {
     return await this.pieceModel.findOne({_id: id})
   }
 
-  async update(id: string, updatePieceDto: PieceDto) {
+  async update(id: string, updatePieceDto: PieceDto, user: string) {
     try {
       await this.pieceModel.updateOne(
         {
@@ -82,6 +83,7 @@ export class PiecesService {
         },
         {
           $set: {
+            user,
             description: String(updatePieceDto.description).toUpperCase(),
             value: updatePieceDto.value,
           },

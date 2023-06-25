@@ -1,4 +1,4 @@
-import {IsNotEmpty, IsNumber} from 'class-validator'
+import {IsNotEmpty, IsNumber, IsOptional} from 'class-validator'
 
 export class PieceDto {
   @IsNotEmpty({message: 'Description is required'})
@@ -6,4 +6,7 @@ export class PieceDto {
 
   @IsNumber()
   public value: number
+
+  @IsOptional()
+  public user: string
 }

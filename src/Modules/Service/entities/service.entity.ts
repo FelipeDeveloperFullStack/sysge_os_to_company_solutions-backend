@@ -13,6 +13,9 @@ export class Service {
 
   @Prop()
   public value: number
+
+  @Prop()
+  public user: string
 }
 
 export const ServiceSchema = SchemaFactory.createForClass(Service)

@@ -9,6 +9,9 @@ export class ExpenselDto {
   @IsOptional()
   public value: string
 
+  @IsOptional()
+  public user: string
+
   @IsString()
   @IsOptional()
   public dateIn: string

@@ -32,6 +32,9 @@ export class User {
 
   @Prop()
   public permissions: IPermissions[]
+
+  @Prop()
+  public user: string
 }
 
 export const UserSchema = SchemaFactory.createForClass(User)

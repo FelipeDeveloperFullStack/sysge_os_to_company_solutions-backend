@@ -14,9 +14,10 @@ export class ExpenseService {
     private expenseModel: Model<ModelDocument>,
   ) {}
 
-  async create(dto: ExpenselDto) {
+  async create(dto: ExpenselDto, user: string) {
     dto = {
       ...dto,
+      user,
       expense: String(dto.expense.trim()).toUpperCase(),
       status: String(dto.status).toUpperCase(),
     }
@@ -61,7 +62,7 @@ export class ExpenseService {
     return await this.expenseModel.findOne({_id: id})
   }
 
-  async update(id: string, dto: ExpenselDto) {
+  async update(id: string, dto: ExpenselDto, user: string) {
     try {
       await this.expenseModel.updateOne(
         {
@@ -69,6 +70,7 @@ export class ExpenseService {
         },
         {
           $set: {
+            user,
             status: String(dto.status).toUpperCase(),
           },
         },

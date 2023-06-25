@@ -24,6 +24,9 @@ export class CreateUserDto {
   public status: string = 'ATIVO'
 
   @IsOptional()
+  public user: string
+
+  @IsOptional()
   @IsArray()
   public permissions: IPermissions[]
 

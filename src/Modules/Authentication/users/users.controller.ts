@@ -9,6 +9,7 @@ import {
   Request,
   UseGuards,
   Query,
+  Headers,
 } from '@nestjs/common'
 import {EventEmitter2} from '@nestjs/event-emitter'
 import {AuthGuard} from '@nestjs/passport'
@@ -28,9 +29,9 @@ export class UsersController {
   ) {}
 
   @Post('create')
-  create(@Body() createUserDto: CreateUserDto) {
+  create(@Body() createUserDto: CreateUserDto, @Headers('user') user: string) {
     // this.eventEmitter.emit('order.created', createUserDto)
-    return this.usersService.create(createUserDto)
+    return this.usersService.create(createUserDto, user)
   }
 
   // @UseGuards(JwtAuthGuard)
@@ -49,12 +50,20 @@ export class UsersController {
   }
 
   @Put('update/:id')
-  update(@Param('id') id: string, @Body() updateUserDto: CreateUserDto) {
-    return this.usersService.update(id, updateUserDto)
+  update(
+    @Param('id') id: string,
+    @Headers('user') user: string,
+    @Body() updateUserDto: CreateUserDto,
+  ) {
+    return this.usersService.update(id, updateUserDto, user)
   }
   @Put('update/status/:id')
-  updateStatus(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.updateStatus(id, updateUserDto)
+  updateStatus(
+    @Param('id') id: string,
+    @Body() updateUserDto: UpdateUserDto,
+    @Headers('user') user: string,
+  ) {
+    return this.usersService.updateStatus(id, updateUserDto, user)
   }
 
   @Delete(':id')

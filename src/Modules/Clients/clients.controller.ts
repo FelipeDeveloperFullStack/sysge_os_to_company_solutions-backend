@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Headers,
   Param,
   Post,
   Put,
@@ -17,8 +18,8 @@ export class ClientsController {
   constructor(private readonly clientsService: ClientsService) {}
 
   @Post()
-  create(@Body() createClientDto: ClientDto) {
-    return this.clientsService.create(createClientDto)
+  create(@Body() createClientDto: ClientDto, @Headers('user') user: string) {
+    return this.clientsService.create(createClientDto, user)
   }
 
   @Get('total')
@@ -37,8 +38,12 @@ export class ClientsController {
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() updateClientDto: ClientDto) {
-    return this.clientsService.update(id, updateClientDto)
+  update(
+    @Param('id') id: string,
+    @Body() updateClientDto: ClientDto,
+    @Headers('user') user: string,
+  ) {
+    return this.clientsService.update(id, updateClientDto, user)
   }
 
   @Delete(':id/:idFolderClientName')
