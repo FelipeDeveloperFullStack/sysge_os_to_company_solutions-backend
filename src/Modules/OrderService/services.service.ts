@@ -147,7 +147,15 @@ export class ServiceService {
         return acc
       }
     }, 0)
-    return {total: total}
+    const totalPending = result.reduce((acc, item) => {
+      const {clean} = formatInputPrice(item?.total)
+      if (item.status === 'PENDENTE') {
+        return acc + clean
+      } else {
+        return acc
+      }
+    }, 0)
+    return {total: total, totalPending}
   }
 
   async getSumTotalOrcamento() {
