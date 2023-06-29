@@ -124,6 +124,9 @@ export class OrderService {
 
   @Prop()
   public user: string
+
+  @Prop()
+  public maturityOfTheBoleto: string
 }
 
 export const ServiceSchema = SchemaFactory.createForClass(OrderService)

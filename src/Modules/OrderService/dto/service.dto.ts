@@ -90,6 +90,9 @@ export class ServiceDto {
   public user: string
 
   @IsOptional()
+  public maturityOfTheBoleto: string
+
+  @IsOptional()
   @IsString()
   public idFileCreatedGoogleDrive: string
 }

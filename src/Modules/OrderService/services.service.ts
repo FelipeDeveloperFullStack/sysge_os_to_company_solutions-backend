@@ -6,7 +6,7 @@ import {ServiceFilterDto} from './dto/service.filter.dto'
 import {OrderService, ServiceDocument} from './entities/service.entity'
 import * as fs from 'fs'
 import * as path from 'path'
-import {format} from 'date-fns'
+import {addDays, format, isBefore, isWithinInterval, parse} from 'date-fns'
 import {formatInputPrice} from 'src/Common/Helpers/formatPrice'
 import {
   createFolder,
@@ -107,6 +107,29 @@ export class ServiceService {
       const io = this.socketService.getIo()
       io.emit('update-os-orcamento', 'updateFileStatus')
     }
+  }
+
+  async getIncomeMaturityOfTheBoleto() {
+    const today = new Date()
+    const threeDaysFromNow = addDays(today, 3)
+    let count = 0
+    const incomes = await this.serviceModel.find()
+    incomes.forEach((income) => {
+      const maturityDate = parse(
+        income.maturityOfTheBoleto || '',
+        'dd/MM/yyyy',
+        new Date(),
+      )
+      if (income.status === 'PENDENTE' && income.formOfPayment === 'Boleto') {
+        if (
+          isWithinInterval(maturityDate, {start: today, end: threeDaysFromNow})
+        ) {
+          count++
+        }
+      }
+    })
+
+    return {count}
   }
 
   async getTotalOrderService() {

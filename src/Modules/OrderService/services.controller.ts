@@ -29,6 +29,11 @@ export class ServiceController {
     return this.serviceService.getTotalOrderService()
   }
 
+  @Get('total/maturity-boleto')
+  getTotalIncomeMaturityOfTheBoleto() {
+    return this.serviceService.getIncomeMaturityOfTheBoleto()
+  }
+
   @Get('total/incomes')
   getTotalIncomes() {
     return this.serviceService.getSumTotalIncomes()
