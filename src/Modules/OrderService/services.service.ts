@@ -149,7 +149,7 @@ export class ServiceService {
     }, 0)
     const totalPending = result.reduce((acc, item) => {
       const {clean} = formatInputPrice(item?.total)
-      if (item.status === 'PENDENTE') {
+      if (item.status === 'PENDENTE' && item.typeDocument !== 'ORCAMENTO') {
         return acc + clean
       } else {
         return acc
