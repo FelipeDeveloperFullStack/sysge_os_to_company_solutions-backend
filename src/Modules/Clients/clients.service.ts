@@ -30,6 +30,8 @@ export class ClientsService {
       ...createClientDto,
       user,
       name: String(createClientDto.name.trim()).toUpperCase(),
+      address: String(createClientDto.address.trim()).toUpperCase(),
+      city: String(createClientDto.city.trim()).toUpperCase(),
     }
     const client = new this.clientModel(createClientDto)
 
@@ -112,8 +114,8 @@ export class ClientsService {
           $set: {
             user,
             name: String(client.name).toUpperCase(),
-            address: client.address,
-            city: client.city,
+            address: String(client.address).toUpperCase(),
+            city: String(client.city).toUpperCase(),
             uf: client.uf,
             email: client.email,
             phoneNumber: client.phoneNumber,
