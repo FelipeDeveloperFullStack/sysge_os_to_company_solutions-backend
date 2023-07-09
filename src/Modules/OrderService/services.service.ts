@@ -24,6 +24,7 @@ import {DocumentChangeStatusDto} from './dto/documentChangeStatus.dto'
 import {moveFileGoogleDrive} from './googleDrive/moveFileFolderClient'
 import {isDevelopmentEnvironment} from 'src/Common/Functions'
 import {
+  countAndDeletePDFs,
   deleteAllFilesInFolder,
   deleteMergedPDFs,
   mergePDFsInFolder,
@@ -71,15 +72,22 @@ export class ServiceService {
     return await this.serviceModel.find(service)
   }
 
-  async mergePdf(clientName: string, idClient: string) {
-    const folderPath = path.join(__dirname, '..', 'pdfs')
+  async callDeleteMergedPDFs(
+    clientName: string,
+    idClient: string,
+    folderPath: string,
+  ) {
     const fileName = `${clientName}-UNIFICADO`
     await deleteMergedPDFs(folderPath)
 
     const resultClient = await this.clientsService.findOne(idClient)
     const idFolderOsUnificadas = resultClient?.idFolderOsUnificadas
 
-    await mergePDFsInFolder(folderPath, fileName)
+    await this.sendSocketMessageToFrontend(
+      'Realizando a unificação, aguarde...',
+    )
+    await mergePDFsInFolder(folderPath, fileName, clientName)
+
     const filePath = path.join(__dirname, '..', 'pdfs', `${fileName}.pdf`)
 
     const result = await list({parents: idFolderOsUnificadas})
@@ -92,6 +100,9 @@ export class ServiceService {
       this.logger.log(
         `[Sistema] - Fazendo o upload do arquivo ${fileName} no Google drive...`,
       )
+      await this.sendSocketMessageToFrontend(
+        'Fazendo o upload do arquivo unificado no Google Drive, aguarde...',
+      )
       await uploadFile({
         fileName: `${fileName}.pdf`,
         filePath: `${filePath}`,
@@ -103,13 +114,34 @@ export class ServiceService {
       this.logger.log(
         `[Sistema] - Fazendo o upload do arquivo ${fileName} no Google drive...`,
       )
+      await this.sendSocketMessageToFrontend(
+        'Fazendo o upload do arquivo unificado no Google Drive, aguarde...',
+      )
       await uploadFile({
         fileName: `${fileName}.pdf`,
         filePath: `${filePath}`,
         parents: idFolderOsUnificadas,
       })
     }
-    await deleteAllFilesInFolder(folderPath)
+    await deleteAllFilesInFolder(folderPath, clientName)
+    await this.sendSocketMessageToFrontend('')
+  }
+
+  async sendSocketMessageToFrontend(message: string) {
+    /** Send socket to Frontend */
+    const io = this.socketService.getIo()
+    io.emit('message-progress', message)
+  }
+
+  async mergePdf(length: number, clientName: string, idClient: string) {
+    const folderPath = path.join(__dirname, '..', 'pdfs')
+    await this.sendSocketMessageToFrontend(
+      'Checando a quantidade de arquivos para realizar a unificação...',
+    )
+    const result = await countAndDeletePDFs(length, clientName, folderPath)
+    if (result) {
+      await this.callDeleteMergedPDFs(clientName, idClient, folderPath)
+    }
   }
 
   async moveFileGoogleDrive(data: DocumentChangeStatusDto) {
@@ -390,6 +422,7 @@ export class ServiceService {
     fileName: string,
     status: string,
     idOrderService?: string,
+    isMerge?: boolean,
   ) {
     try {
       const result = await list({parents: idFolder})
@@ -409,7 +442,7 @@ export class ServiceService {
           filePath: `${filePath}.pdf`,
           parents: idFolder,
         })
-        await this.deleteFile(fileName)
+        await this.deleteFile(fileName, isMerge)
         const idFileCreated = resultFileCreated.id
         if (idOrderService) {
           await this.updateIdFileCreatedGoogleDrive(
@@ -430,7 +463,7 @@ export class ServiceService {
           filePath: `${filePath}.pdf`,
           parents: idFolder,
         })
-        await this.deleteFile(fileName)
+        await this.deleteFile(fileName, isMerge)
         const idFileCreated = resultFileCreated.id
         if (idOrderService) {
           await this.updateIdFileCreatedGoogleDrive(
@@ -580,6 +613,7 @@ export class ServiceService {
     idFolderOsUnificadas: string,
     idFolderClientName: string,
     idOrderService: string,
+    isMerge?: boolean,
   ) {
     try {
       if (typeDocument === 'ORCAMENTO') {
@@ -588,6 +622,7 @@ export class ServiceService {
           filename,
           status,
           idOrderService,
+          isMerge,
         )
       } else {
         if (status === 'PAGO') {
@@ -596,6 +631,7 @@ export class ServiceService {
             filename,
             status,
             idOrderService,
+            isMerge,
           )
           await this.deleteFileByStatusFolder(
             'O.S PENDENTES',
@@ -609,6 +645,7 @@ export class ServiceService {
             filename,
             status,
             idOrderService,
+            isMerge,
           )
           await this.deleteFileByStatusFolder(
             'O.S PAGAS',
@@ -687,26 +724,27 @@ export class ServiceService {
     }
   }
 
-  async deleteFile(fileName: string) {
+  async deleteFile(fileName: string, isMerge: boolean) {
     const folderPath = path.join(__dirname, '..', 'pdfs')
 
     const filePath = path.join(folderPath, `${fileName}.pdf`)
+    if (!isMerge) {
+      fs.access(filePath, fs.constants.F_OK, (error) => {
+        if (error) {
+          console.error('O arquivo não existe:', error)
+          return
+        }
 
-    // fs.access(filePath, fs.constants.F_OK, (error) => {
-    //   if (error) {
-    //     console.error('O arquivo não existe:', error)
-    //     return
-    //   }
+        fs.unlink(filePath, (error) => {
+          if (error) {
+            console.error('Erro ao excluir o arquivo:', error)
+            return
+          }
 
-    //   fs.unlink(filePath, (error) => {
-    //     if (error) {
-    //       console.error('Erro ao excluir o arquivo:', error)
-    //       return
-    //     }
-
-    //     this.logger.log('Arquivo excluído com sucesso:', filePath)
-    //   })
-    // })
+          this.logger.log('Arquivo excluído com sucesso:', filePath)
+        })
+      })
+    }
 
     // fs.unlink(filePath, (error) => {
     //   if (error) {
@@ -802,7 +840,8 @@ export class ServiceService {
     typeDocument: string,
     idClient: string,
     user: string,
-  ): Promise<void> {
+    isMerge: boolean,
+  ) {
     try {
       const folderPath = path.join(__dirname, '..', 'pdfs')
       // Cria o diretório "pdfs" caso ele não exista
@@ -857,6 +896,7 @@ export class ServiceService {
         idFolderOsUnificadas,
         idFolderClientName,
         idOrderService,
+        isMerge,
       )
       this.logger.log(`[Sistema] - Procedimento finalizado com sucesso.`)
       this.logger.log(`✅-----------------------------------✅`)
@@ -871,6 +911,9 @@ export class ServiceService {
       /** Send socket to Frontend */
       const io = this.socketService.getIo()
       io.emit('update-os-orcamento', 'updateFileStatus')
+      return {
+        status: HttpStatus.CREATED,
+      }
     } catch (error) {
       this.logger.log(`[Sistema] - Houve um erro: ${error}`)
       await this.updateFileStatus(
@@ -884,7 +927,7 @@ export class ServiceService {
       /** Send socket to Frontend */
       const io = this.socketService.getIo()
       io.emit('update-os-orcamento', 'updateFileStatus')
-      await this.deleteFile(filename)
+      await this.deleteFile(filename, isMerge)
       throw new HttpException(
         {
           message: error,

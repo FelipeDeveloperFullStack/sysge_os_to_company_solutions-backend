@@ -3,15 +3,52 @@ import {promises as fs} from 'fs'
 import * as path from 'path'
 import {Logger} from '@nestjs/common'
 
+export const countAndDeletePDFs = async (
+  length: number,
+  clientName: string,
+  folderPath: string,
+): Promise<boolean> => {
+  let foundPDFs = 0
+
+  while (foundPDFs !== length) {
+    const files = await fs.readdir(folderPath)
+
+    for (const file of files) {
+      const filePath = path.join(folderPath, file)
+      const stat = await fs.stat(filePath)
+
+      if (
+        stat.isFile() &&
+        path.extname(file).toLowerCase() === '.pdf' &&
+        file.includes(clientName)
+      ) {
+        foundPDFs++
+      }
+    }
+
+    if (foundPDFs === length) {
+      return true
+    }
+  }
+}
+
 export const deleteAllFilesInFolder = async (
   folderPath: string,
+  clientName: string,
 ): Promise<void> => {
   const files = await fs.readdir(folderPath)
   const logger = new Logger()
 
   for (const file of files) {
     const filePath = path.join(folderPath, file)
-    await fs.unlink(filePath)
+    const stat = await fs.stat(filePath)
+    if (
+      stat.isFile() &&
+      path.extname(file).toLowerCase() === '.pdf' &&
+      file.includes(clientName)
+    ) {
+      await fs.unlink(filePath)
+    }
   }
 
   logger.log('[Sistema] - All files deleted successfull')
@@ -70,6 +107,7 @@ const mergePDFs = async (
 export const mergePDFsInFolder = async (
   folderPath: string,
   outputFileName: string,
+  clientName: string,
 ): Promise<void> => {
   const pdfFiles: string[] = []
   const files = await fs.readdir(folderPath)
@@ -78,7 +116,11 @@ export const mergePDFsInFolder = async (
     const filePath = path.join(folderPath, file)
     const stat = await fs.stat(filePath)
 
-    if (stat.isFile() && path.extname(file).toLowerCase() === '.pdf') {
+    if (
+      stat.isFile() &&
+      path.extname(file).toLowerCase() === '.pdf' &&
+      file.includes(clientName)
+    ) {
       pdfFiles.push(filePath)
     }
   }

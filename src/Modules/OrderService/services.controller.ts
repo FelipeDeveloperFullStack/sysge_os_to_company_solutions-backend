@@ -54,10 +54,15 @@ export class ServiceController {
     data: {
       clientName: string
       idClient: string
+      length: number
     },
     @Headers('user') user: string,
   ) {
-    return this.serviceService.mergePdf(data.clientName, data.idClient)
+    return this.serviceService.mergePdf(
+      data.length,
+      data.clientName,
+      data.idClient,
+    )
   }
 
   // @Delete('delete-document')
@@ -82,11 +87,12 @@ export class ServiceController {
       status: string
       typeDocument: string
       idClient: string
+      isMerge: boolean
     },
     @Headers('user') user: string,
-  ): Promise<void> {
+  ) {
     try {
-      await this.serviceService.savePDF(
+      return await this.serviceService.savePDF(
         data.id,
         data.base64Pdf,
         data.fileName,
@@ -95,6 +101,7 @@ export class ServiceController {
         data.typeDocument,
         data.idClient,
         user,
+        data.isMerge,
       )
     } catch (error) {
       console.error(error)
