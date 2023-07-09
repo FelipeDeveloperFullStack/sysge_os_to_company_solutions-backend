@@ -48,6 +48,17 @@ export class ServiceController {
   moveFileByStatusDocument(@Query() data: DocumentChangeStatusDto) {
     return this.serviceService.moveFileGoogleDrive(data)
   }
+  @Post('merge-pdf')
+  mergePdf(
+    @Body()
+    data: {
+      clientName: string
+      idClient: string
+    },
+    @Headers('user') user: string,
+  ) {
+    return this.serviceService.mergePdf(data.clientName, data.idClient)
+  }
 
   // @Delete('delete-document')
   // deleteDocument(@Query() data: DocumentChangeStatusDto) {

@@ -23,6 +23,11 @@ import {ClientsService} from '../Clients/clients.service'
 import {DocumentChangeStatusDto} from './dto/documentChangeStatus.dto'
 import {moveFileGoogleDrive} from './googleDrive/moveFileFolderClient'
 import {isDevelopmentEnvironment} from 'src/Common/Functions'
+import {
+  deleteAllFilesInFolder,
+  deleteMergedPDFs,
+  mergePDFsInFolder,
+} from './mergePdf'
 
 @Injectable()
 export class ServiceService {
@@ -64,6 +69,47 @@ export class ServiceService {
       //laudoService: new RegExp(serviceFilter.laudoService, 'i'),
     }
     return await this.serviceModel.find(service)
+  }
+
+  async mergePdf(clientName: string, idClient: string) {
+    const folderPath = path.join(__dirname, '..', 'pdfs')
+    const fileName = `${clientName}-UNIFICADO`
+    await deleteMergedPDFs(folderPath)
+
+    const resultClient = await this.clientsService.findOne(idClient)
+    const idFolderOsUnificadas = resultClient?.idFolderOsUnificadas
+
+    await mergePDFsInFolder(folderPath, fileName)
+    const filePath = path.join(__dirname, '..', 'pdfs', `${fileName}.pdf`)
+
+    const result = await list({parents: idFolderOsUnificadas})
+
+    const resultFilderFileName = result.files.filter(
+      (file) => file.name === `${fileName}.pdf`,
+    )
+
+    if (!resultFilderFileName.length) {
+      this.logger.log(
+        `[Sistema] - Fazendo o upload do arquivo ${fileName} no Google drive...`,
+      )
+      await uploadFile({
+        fileName: `${fileName}.pdf`,
+        filePath: `${filePath}`,
+        parents: idFolderOsUnificadas,
+      })
+    } else {
+      const {id} = resultFilderFileName[0]
+      await destroy({fileId: id})
+      this.logger.log(
+        `[Sistema] - Fazendo o upload do arquivo ${fileName} no Google drive...`,
+      )
+      await uploadFile({
+        fileName: `${fileName}.pdf`,
+        filePath: `${filePath}`,
+        parents: idFolderOsUnificadas,
+      })
+    }
+    await deleteAllFilesInFolder(folderPath)
   }
 
   async moveFileGoogleDrive(data: DocumentChangeStatusDto) {
@@ -646,21 +692,21 @@ export class ServiceService {
 
     const filePath = path.join(folderPath, `${fileName}.pdf`)
 
-    fs.access(filePath, fs.constants.F_OK, (error) => {
-      if (error) {
-        console.error('O arquivo não existe:', error)
-        return
-      }
+    // fs.access(filePath, fs.constants.F_OK, (error) => {
+    //   if (error) {
+    //     console.error('O arquivo não existe:', error)
+    //     return
+    //   }
 
-      fs.unlink(filePath, (error) => {
-        if (error) {
-          console.error('Erro ao excluir o arquivo:', error)
-          return
-        }
+    //   fs.unlink(filePath, (error) => {
+    //     if (error) {
+    //       console.error('Erro ao excluir o arquivo:', error)
+    //       return
+    //     }
 
-        this.logger.log('Arquivo excluído com sucesso:', filePath)
-      })
-    })
+    //     this.logger.log('Arquivo excluído com sucesso:', filePath)
+    //   })
+    // })
 
     // fs.unlink(filePath, (error) => {
     //   if (error) {
