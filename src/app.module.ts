@@ -15,6 +15,7 @@ import {PiecesModule} from './Modules/Pieces/pieces.module'
 import {ServicesModule} from './Modules/Service/services.module'
 import {OrderServicesModule} from './Modules/OrderService/services.module'
 import {ExpensesModule} from './Modules/Expense/expenses.module'
+import {ScheduleBoletoService} from './Schedule/EmailBoleto/ScheduleBoletoService'
 
 @Module({
   imports: [
@@ -54,6 +55,6 @@ import {ExpensesModule} from './Modules/Expense/expenses.module'
     ExpensesModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [ScheduleBoletoService],
 })
 export class AppModule {}
