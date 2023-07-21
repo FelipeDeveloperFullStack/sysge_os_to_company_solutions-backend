@@ -57,6 +57,7 @@ async function bootstrap() {
     cors: {
       origin: [
         'http://localhost:3000',
+        'https://solution-os.vercel.app',
         publicIP ? `http://${publicIP}:3000` : undefined,
         publicIP ? `http://${publicIP}:8080` : undefined,
       ], // Adicione a origem do seu frontend aqui
