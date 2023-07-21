@@ -49,6 +49,9 @@ export class Client {
 
   @Prop()
   public user: string
+
+  @Prop()
+  public withoutEmail: boolean
 }
 
 export const ClientSchema = SchemaFactory.createForClass(Client)

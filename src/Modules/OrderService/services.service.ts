@@ -63,6 +63,10 @@ export class ServiceService {
     }
   }
 
+  async findAllWithoutParam() {
+    return await this.serviceModel.find()
+  }
+
   async findAll(serviceFilter: ServiceFilterDto) {
     const service = {
       description: new RegExp(serviceFilter.clientName, 'i'),
@@ -261,6 +265,35 @@ export class ServiceService {
         },
         {
           $set: updateServiceDto,
+        },
+      )
+      return {
+        status: HttpStatus.OK,
+      }
+    } catch (error) {
+      throw new HttpException(
+        {
+          message: error,
+        },
+        HttpStatus.EXPECTATION_FAILED,
+      )
+    }
+  }
+  async updateStatusSendEmailSchedule(
+    id: string,
+    isSendThreeDayMaturityBoleto: boolean,
+    isSendNowDayMaturityBoleto: boolean,
+  ) {
+    try {
+      await this.serviceModel.updateOne(
+        {
+          _id: id,
+        },
+        {
+          $set: {
+            isSendThreeDayMaturityBoleto,
+            isSendNowDayMaturityBoleto,
+          },
         },
       )
       return {

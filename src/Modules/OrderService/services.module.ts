@@ -1,5 +1,6 @@
 import {forwardRef, Module} from '@nestjs/common'
 import {MongooseModule} from '@nestjs/mongoose'
+import {ScheduleBoletoModule} from 'src/Schedule/EmailBoleto/emailBoleto.module'
 import {SocketService} from 'src/Socket/socket.service'
 import {ClientsModule} from '../Clients/clients.module'
 import {ClientsService} from '../Clients/clients.service'
@@ -13,6 +14,7 @@ import {ServiceService} from './services.service'
       {name: OrderService.name, schema: ServiceSchema},
     ]),
     forwardRef(() => ClientsModule),
+    forwardRef(() => ScheduleBoletoModule),
   ],
   controllers: [ServiceController],
   providers: [ServiceService, SocketService],

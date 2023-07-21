@@ -1,4 +1,4 @@
-import {Module} from '@nestjs/common'
+import {Module, OnApplicationBootstrap} from '@nestjs/common'
 import {ConfigModule} from '@nestjs/config'
 import {EventEmitterModule} from '@nestjs/event-emitter'
 import {MongooseModule} from '@nestjs/mongoose'
@@ -57,4 +57,9 @@ import {ScheduleBoletoService} from './Schedule/EmailBoleto/ScheduleBoletoServic
   controllers: [],
   providers: [ScheduleBoletoService],
 })
-export class AppModule {}
+export class AppModule implements OnApplicationBootstrap {
+  constructor(private readonly scheduleService: ScheduleBoletoService) {}
+  onApplicationBootstrap() {
+    this.scheduleService.start()
+  }
+}

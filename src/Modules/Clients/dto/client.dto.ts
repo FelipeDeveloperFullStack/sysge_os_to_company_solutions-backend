@@ -1,4 +1,10 @@
-import {IsEmail, IsNotEmpty, IsOptional, IsString} from 'class-validator'
+import {
+  IsBoolean,
+  IsEmail,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+} from 'class-validator'
 
 export class ClientDto {
   @IsString({message: 'Nome precisa ser texto'})
@@ -51,4 +57,8 @@ export class ClientDto {
 
   @IsString()
   public cep: string
+
+  @IsBoolean()
+  @IsOptional()
+  public withoutEmail: boolean
 }

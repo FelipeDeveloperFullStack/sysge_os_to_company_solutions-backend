@@ -95,4 +95,12 @@ export class ServiceDto {
   @IsOptional()
   @IsString()
   public idFileCreatedGoogleDrive: string
+
+  @IsOptional()
+  @IsString()
+  public isSendThreeDayMaturityBoleto: boolean
+
+  @IsOptional()
+  @IsString()
+  public isSendNowDayMaturityBoleto: boolean
 }

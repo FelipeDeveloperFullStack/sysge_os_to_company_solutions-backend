@@ -127,6 +127,7 @@ export class ClientsService {
             idFolderOsUnificadas: client.idFolderOsUnificadas,
             idFolderOrcamento: client.idFolderOrcamento,
             idFolderClientName: client.idFolderClientName,
+            withoutEmail: !client.email,
           },
         },
       )
@@ -162,6 +163,31 @@ export class ClientsService {
             idFolderOsUnificadas: idFolderOsUnificadas,
             idFolderOrcamento: idFolderOrcamento,
             idFolderClientName: idFolderClientName,
+          },
+        },
+      )
+      return {
+        status: HttpStatus.OK,
+      }
+    } catch (error) {
+      throw new HttpException(
+        {
+          message: error,
+        },
+        HttpStatus.EXPECTATION_FAILED,
+      )
+    }
+  }
+
+  async updateRegisterNotification(id: string, withoutEmail: boolean) {
+    try {
+      await this.clientModel.updateOne(
+        {
+          _id: id,
+        },
+        {
+          $set: {
+            withoutEmail,
           },
         },
       )

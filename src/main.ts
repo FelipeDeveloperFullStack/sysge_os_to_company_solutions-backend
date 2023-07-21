@@ -53,31 +53,6 @@ async function bootstrap() {
   const logger = new Logger()
   const app = await NestFactory.create(AppModule)
   let publicIP = ''
-
-  if (!isDevelopmentEnvironment()) {
-    publicIP = await getPublicIP(logger)
-    if (publicIP) {
-      const ipData = {ip: publicIP}
-      await writeFileAsync('ip.json', JSON.stringify(ipData))
-      logger.debug(`Public IP address: ${publicIP}`)
-    } else {
-      logger.error(
-        'Could not be able to get public ip address. Please restart the server.',
-      )
-    }
-  } else {
-    publicIP = await getLocalIP(logger)
-    if (publicIP) {
-      const ipData = {ip: publicIP}
-      await writeFileAsync('ip.json', JSON.stringify(ipData))
-      logger.debug(`Local environmnet development IP address: ${publicIP}`)
-    }
-  }
-
-  app.enableCors()
-  app.useGlobalPipes(new ValidationPipe({whitelist: true, transform: true}))
-  app.use(json({limit: '50mb'}))
-  //app.useWebSocketAdapter(new SocketIOAdapter())
   const io = new Server(app.getHttpServer(), {
     cors: {
       origin: [
@@ -91,6 +66,38 @@ async function bootstrap() {
   })
   const socketService = app.get(SocketService)
   socketService.setIo(io)
+  if (!isDevelopmentEnvironment()) {
+    publicIP = await getPublicIP(logger)
+    if (publicIP) {
+      const ipData = {ip: publicIP}
+      await writeFileAsync('ip.json', JSON.stringify(ipData))
+      logger.debug(`Public IP address: ${publicIP}`)
+      setInterval(() => {
+        io.emit('ip-address', ipData)
+        /** Send to front end IP address updated */
+      }, 1000)
+    } else {
+      logger.error(
+        'Could not be able to get public ip address. Please restart the server.',
+      )
+    }
+  } else {
+    publicIP = await getLocalIP(logger)
+    if (publicIP) {
+      const ipData = {ip: publicIP}
+      await writeFileAsync('ip.json', JSON.stringify(ipData))
+      setInterval(() => {
+        io.emit('ip-address', ipData)
+        /** Send to front end IP address updated */
+      }, 1000)
+      logger.debug(`Local environmnet development IP address: ${publicIP}`)
+    }
+  }
+
+  app.enableCors()
+  app.useGlobalPipes(new ValidationPipe({whitelist: true, transform: true}))
+  app.use(json({limit: '50mb'}))
+  //app.useWebSocketAdapter(new SocketIOAdapter())
   await app.listen(PORT)
   logger.warn(`Server running on port: ${PORT}`)
 }
