@@ -73,10 +73,10 @@ async function bootstrap() {
       const ipData = {ip: publicIP}
       await writeFileAsync('ip.json', JSON.stringify(ipData))
       logger.debug(`Public IP address: ${publicIP}`)
-      setInterval(() => {
-        io.emit('ip-address', ipData)
-        /** Send to front end IP address updated */
-      }, 1000)
+      // setInterval(() => {
+      //   io.emit('ip-address', ipData)
+      //   /** Send to front end IP address updated */
+      // }, 1000)
     } else {
       logger.error(
         'Could not be able to get public ip address. Please restart the server.',
@@ -87,10 +87,10 @@ async function bootstrap() {
     if (publicIP) {
       const ipData = {ip: publicIP}
       await writeFileAsync('ip.json', JSON.stringify(ipData))
-      setInterval(() => {
-        io.emit('ip-address', ipData)
-        /** Send to front end IP address updated */
-      }, 1000)
+      // setInterval(() => {
+      //   io.emit('ip-address', ipData)
+      //   /** Send to front end IP address updated */
+      // }, 1000)
       logger.debug(`Local environmnet development IP address: ${publicIP}`)
     }
   }

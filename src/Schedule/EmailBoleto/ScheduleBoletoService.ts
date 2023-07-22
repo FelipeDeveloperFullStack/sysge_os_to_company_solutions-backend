@@ -7,7 +7,7 @@ import * as path from 'path'
 import * as base64ToS3 from 'nodemailer-base64-to-s3'
 import {isDevelopmentEnvironment} from 'src/Common/Functions'
 import {ServiceService} from 'src/Modules/OrderService/services.service'
-import {addDays, isWithinInterval, parse, isEqual} from 'date-fns'
+import {addDays, isWithinInterval, parse, isEqual, format} from 'date-fns'
 import {DateTime} from 'luxon'
 import {ClientsService} from 'src/Modules/Clients/clients.service'
 
@@ -80,20 +80,26 @@ export class ScheduleBoletoService {
       gif: `data:image/gif;base64,${gifData}`,
     }
     const html = this.emailTemplate(data)
-    this.sendEmail(
-      email,
-      // 'Lembrete Importante: Vencimento do Boleto',
-      `Lembrete Importante: ${clientName}`,
-      html,
-      gifPath,
-    )
-    this.orderService.updateStatusSendEmailSchedule(osId, days === 3, days < 3)
-    const isCurrentDay = days < 3
-    this.logger.debug(
-      `Enviando e-mail de cobrança para o cliente: ${clientName} - ${
-        isCurrentDay ? 'Vencimento hoje' : 'Vencimento daqui 3 dias'
-      }`,
-    )
+    setTimeout(() => {
+      this.sendEmail(
+        email,
+        // 'Lembrete Importante: Vencimento do Boleto',
+        `Lembrete Importante: ${clientName} - ${osId}`,
+        html,
+        gifPath,
+      )
+      this.orderService.updateStatusSendEmailSchedule(
+        osId,
+        days === 3,
+        days < 3,
+      )
+      const isCurrentDay = days < 3
+      this.logger.debug(
+        `Enviando e-mail de cobrança para o cliente: ${clientName} - ${
+          isCurrentDay ? 'Vencimento hoje' : 'Vencimento daqui 3 dias'
+        }`,
+      )
+    }, 5000)
   }
 
   async sendOrUpdate(
@@ -110,13 +116,13 @@ export class ScheduleBoletoService {
     }
   }
 
-  async getMaturityOfTheBoleto(days: number) {
+  async getMaturityOfTheBoleto() {
     const timeZone = 'America/Sao_Paulo'
     const today = new Date()
     const now = DateTime.now().setZone(timeZone)
     const currentDay = now.toISO()
 
-    const threeDaysFromNowOrDayCurrentNow = addDays(today, days)
+    const threeDaysFromNowOrDayCurrentNow = addDays(today, 3)
     const orderService = await this.orderService.findAllWithoutParam()
     for (let index = 0; index < orderService.length; index++) {
       const orderServiceItem = orderService[index]
@@ -130,12 +136,16 @@ export class ScheduleBoletoService {
         new Date(),
       )
       if (
-        orderServiceItem.status === 'PENDENTE' &&
-        orderServiceItem.formOfPayment === 'Boleto'
+        String(orderServiceItem.status).trim() === 'PENDENTE' &&
+        String(orderServiceItem.formOfPayment).trim() === 'Boleto'
       ) {
-        console.log({currentDay, threeDaysFromNowOrDayCurrentNow})
-        if (isEqual(new Date(currentDay), threeDaysFromNowOrDayCurrentNow)) {
-          await this.sendOrUpdate(osId, days, name, clientId)
+        if (
+          format(new Date(currentDay), 'yyyy-MM-dd') ===
+          format(maturityDate, 'yyyy-MM-dd')
+        ) {
+          if (!orderServiceItem.isSendNowDayMaturityBoleto) {
+            await this.sendOrUpdate(osId, 0, name, clientId)
+          }
         }
         if (
           isWithinInterval(maturityDate, {
@@ -143,7 +153,9 @@ export class ScheduleBoletoService {
             end: threeDaysFromNowOrDayCurrentNow,
           })
         ) {
-          await this.sendOrUpdate(osId, days, name, clientId)
+          if (!orderServiceItem.isSendThreeDayMaturityBoleto) {
+            await this.sendOrUpdate(osId, 3, name, clientId)
+          }
         }
       }
     }
@@ -155,13 +167,14 @@ export class ScheduleBoletoService {
     //   // Lógica da tarefa que será executada
     //   console.log('Tarefa agendada executada!')
     // })
-    const today = new Date()
-    const threeDaysFromNowOrDayCurrentNow = addDays(today, 0)
+
+    const templatePath = path.resolve('ip.json')
+    const templateContent = fs.readFileSync(templatePath, 'utf8')
+
     cron.schedule('*/1 * * * *', async () => {
-      if (isDevelopmentEnvironment()) {
-        // await this.getMaturityOfTheBoleto(3)
-        //await this.getMaturityOfTheBoleto(-1)
-      }
+      // if (isDevelopmentEnvironment()) {
+      //   await this.getMaturityOfTheBoleto()
+      // }
     })
   }
 }

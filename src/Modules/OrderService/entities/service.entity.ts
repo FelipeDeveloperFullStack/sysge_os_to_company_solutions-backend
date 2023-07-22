@@ -127,6 +127,12 @@ export class OrderService {
 
   @Prop()
   public maturityOfTheBoleto: string
+
+  @Prop()
+  public isSendThreeDayMaturityBoleto: boolean
+
+  @Prop()
+  public isSendNowDayMaturityBoleto: boolean
 }
 
 export const ServiceSchema = SchemaFactory.createForClass(OrderService)
