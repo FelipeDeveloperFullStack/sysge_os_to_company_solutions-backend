@@ -1,4 +1,4 @@
-import {IsOptional, IsString} from 'class-validator'
+import {IsBoolean, IsOptional, IsString} from 'class-validator'
 import {ClientT, ItemPieces, ItemServices, Laudo} from './type'
 
 export class ServiceDto {
@@ -97,10 +97,14 @@ export class ServiceDto {
   public idFileCreatedGoogleDrive: string
 
   @IsOptional()
-  @IsString()
+  @IsBoolean()
   public isSendThreeDayMaturityBoleto: boolean
 
   @IsOptional()
-  @IsString()
+  @IsBoolean()
   public isSendNowDayMaturityBoleto: boolean
+
+  @IsOptional()
+  @IsBoolean()
+  public isBoletoUploaded: boolean
 }

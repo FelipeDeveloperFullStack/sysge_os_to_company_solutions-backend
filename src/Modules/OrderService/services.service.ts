@@ -67,6 +67,122 @@ export class ServiceService {
     return await this.serviceModel.find()
   }
 
+  async updateBoletoUploaded(osNumber: string, isBoletoUploaded: boolean) {
+    try {
+      await this.serviceModel.updateOne(
+        {
+          osNumber,
+        },
+        {
+          $set: {
+            isBoletoUploaded,
+          },
+        },
+      )
+      return {
+        status: HttpStatus.OK,
+      }
+    } catch (error) {
+      throw new HttpException(
+        {
+          message: error,
+        },
+        HttpStatus.EXPECTATION_FAILED,
+      )
+    }
+  }
+
+  async uploadBoleto(file: any, osNumber: string) {
+    if (!file) {
+      throw new HttpException(
+        {
+          message: 'Nenhum arquivo foi enviado.',
+        },
+        HttpStatus.EXPECTATION_FAILED,
+      )
+    }
+    // Verificar se a pasta "boletos" já existe
+    const folderPath = path.join(__dirname, '..', 'boletos')
+    if (!fs.existsSync(folderPath)) {
+      fs.mkdirSync(folderPath)
+    }
+    // Renomear o arquivo com o número da ordem de serviço
+    const newFileName = `${osNumber}.pdf`
+    const newFilePath = path.join(folderPath, newFileName)
+    try {
+      this.logger.log(
+        `[Sistema] - Salvando o boleto ${osNumber}.pdf na pasta 'boleto'...`,
+      )
+      await fs.promises.writeFile(newFilePath, file.buffer)
+      this.logger.log(`[Sistema] - 'Arquivo salvo com sucesso!'`)
+      await this.updateBoletoUploaded(osNumber, true)
+      return {message: 'ok'}
+    } catch (error) {
+      throw new HttpException(
+        {
+          message: error,
+        },
+        HttpStatus.EXPECTATION_FAILED,
+      )
+    }
+  }
+
+  async findFileByOrderNumber(orderNumber: string): Promise<string | null> {
+    const folderPath = path.join('dist', 'Modules', 'boletos')
+    const fileName = `${orderNumber}.pdf`
+    const filePath = path.join(folderPath, fileName)
+
+    try {
+      // Check if the file exists
+      if (fs.existsSync(filePath)) {
+        // Read the file and return the content as a Buffer
+        return filePath
+      } else {
+        return null // File not found
+      }
+    } catch (err) {
+      this.logger.error('[SISTEMA] - Error accessing the folder or file:', err)
+      return null
+    }
+  }
+
+  async getTotalBoletoNotImported() {
+    const orderServices = await this.findAllWithoutParam()
+    const orders = []
+    for (let index = 0; index < orderServices.length; index++) {
+      const element = orderServices[index]
+      if (
+        String(element.status).trim() === 'PENDENTE' &&
+        String(element.formOfPayment).trim() === 'Boleto'
+      ) {
+        const hasBoletoFile = await this.findFileByOrderNumber(element.osNumber)
+        if (!hasBoletoFile) {
+          orders.push(element)
+        }
+      }
+    }
+    return orders
+  }
+
+  async getTotalClientWithoutEmail() {
+    const orderServices = await this.findAllWithoutParam()
+    const clients = []
+    for (let index = 0; index < orderServices.length; index++) {
+      const element = orderServices[index]
+      const clientId = element?.client?.id
+      if (
+        String(element.status).trim() === 'PENDENTE' &&
+        String(element.formOfPayment).trim() === 'Boleto'
+      ) {
+        const result = await this.clientsService.findOne(clientId)
+        if (result.withoutEmail) {
+          clients.push(result)
+        }
+      }
+    }
+    return clients
+  }
+
   async findAll(serviceFilter: ServiceFilterDto) {
     const service = {
       description: new RegExp(serviceFilter.clientName, 'i'),
@@ -259,6 +375,14 @@ export class ServiceService {
 
   async update(id: string, updateServiceDto: ServiceDto) {
     try {
+      if (updateServiceDto.status === 'PAGO') {
+        const orderService = await this.serviceModel.findOne({_id: id})
+        await this.deleteFileByOrderNumber(orderService.osNumber)
+        updateServiceDto = {
+          ...updateServiceDto,
+          isBoletoUploaded: false,
+        }
+      }
       await this.serviceModel.updateOne(
         {
           _id: id,
@@ -384,11 +508,32 @@ export class ServiceService {
     }
   }
 
+  async deleteFileByOrderNumber(orderNumber: string) {
+    const folderPath = path.join('dist', 'Modules', 'boletos')
+    const fileName = `${orderNumber}.pdf`
+    const filePath = path.join(folderPath, fileName)
+
+    try {
+      // Check if the file exists
+      if (fs.existsSync(filePath)) {
+        // Delete the file
+        fs.unlinkSync(filePath)
+      }
+    } catch (err) {
+      console.error('Error accessing the folder or file:', err)
+      return false
+    }
+  }
+
   async remove(id: string, idFileCreatedGoogleDrive?: string) {
     try {
       this.logger.log(
         `[Sistema] - Excluindo a Ordem de Servico/Orcamento ${id}...`,
       )
+      const orderService = await this.serviceModel.findOne({_id: id})
+
+      await this.deleteFileByOrderNumber(orderService.osNumber)
+
       await this.serviceModel.deleteOne({_id: id})
       if (idFileCreatedGoogleDrive !== 'undefined') {
         this.logger.log(`[Sistema] - Excluindo o arquivo do Google Drive...`)

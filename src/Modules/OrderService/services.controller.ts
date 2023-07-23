@@ -8,8 +8,14 @@ import {
   Put,
   Query,
 } from '@nestjs/common'
-import {Headers, HttpCode} from '@nestjs/common/decorators'
+import {
+  Headers,
+  HttpCode,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common/decorators'
 import {HttpStatus} from '@nestjs/common/enums'
+import {FileInterceptor} from '@nestjs/platform-express'
 import {DocumentChangeStatusDto} from './dto/documentChangeStatus.dto'
 import {ServiceDto} from './dto/service.dto'
 import {ServiceFilterDto} from './dto/service.filter.dto'
@@ -32,6 +38,22 @@ export class ServiceController {
   @Get('total/maturity-boleto')
   getTotalIncomeMaturityOfTheBoleto() {
     return this.serviceService.getIncomeMaturityOfTheBoleto()
+  }
+
+  @Get('total-client-without-email')
+  getTotalClientWithoutEmail() {
+    return this.serviceService.getTotalClientWithoutEmail()
+  }
+
+  @Get('total-boleto-not-imported')
+  getTotalBoletoNotImported() {
+    return this.serviceService.getTotalBoletoNotImported()
+  }
+
+  @Post('upload/boleto/:osNumber')
+  @UseInterceptors(FileInterceptor('file'))
+  uploadBoleto(@UploadedFile() file: any, @Param('osNumber') osNumber: string) {
+    return this.serviceService.uploadBoleto(file, osNumber)
   }
 
   @Get('total/incomes')

@@ -7,6 +7,7 @@ import {
   listFolder,
   destroy,
 } from '../OrderService/googleDrive/gdrive'
+import {ServiceService} from '../OrderService/services.service'
 import {ClientDto} from './dto/client.dto'
 import {ClientFilterDto} from './dto/client.filter.dto'
 import {Client, ClientDocument} from './entities/client.entity'

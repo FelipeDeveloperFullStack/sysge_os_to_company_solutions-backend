@@ -33,13 +33,20 @@ export class ScheduleBoletoService {
       service: 'gmail',
       auth: {
         user: 'solution.financeiro2012@gmail.com',
-        pass: 'forsudxauoyxqomx',
+        pass: process.env.ID_SEND_EMAIL,
       },
     })
     this.transporter.use('compile', base64ToS3({folder: 'temp'}))
   }
 
-  async sendEmail(to: string, subject: string, body: string, gifPath: string) {
+  async sendEmail(
+    to: string,
+    subject: string,
+    body: string,
+    gifPath: string,
+    pdfAttachment: string,
+    orderNumber: string,
+  ) {
     const mailOptions = {
       from: 'solution.financeiro2012@gmail.com',
       to: to,
@@ -54,6 +61,16 @@ export class ScheduleBoletoService {
       ],
     }
 
+    const nameBoletoFile = `BOLETO REFERENTE A ORDEM DE SERVICO DE NUMERO ${orderNumber}.pdf`
+
+    if (pdfAttachment) {
+      mailOptions.attachments.push({
+        filename: nameBoletoFile,
+        path: pdfAttachment,
+        cid: nameBoletoFile,
+      })
+    }
+
     try {
       const info = await this.transporter.sendMail(mailOptions)
       console.log('E-mail enviado:', info.response)
@@ -66,7 +83,9 @@ export class ScheduleBoletoService {
     email: string,
     osId: string,
     days: number,
-    clientName?: string,
+    clientName: string,
+    pdfAttachment: string,
+    osNumber: string,
   ) {
     const gifPath = path.resolve(
       'dist',
@@ -76,17 +95,22 @@ export class ScheduleBoletoService {
     )
     const gifData = fs.readFileSync(gifPath, 'base64')
     const data = {
-      title: '',
+      maturity: `${
+        days === 3
+          ? 'vencerá após 3 dias do envio deste email.'
+          : 'vencerá hoje.'
+      }`,
       gif: `data:image/gif;base64,${gifData}`,
     }
     const html = this.emailTemplate(data)
     setTimeout(() => {
       this.sendEmail(
         email,
-        // 'Lembrete Importante: Vencimento do Boleto',
-        `Lembrete Importante: ${clientName} - ${osId}`,
+        'Lembrete Importante: Vencimento do Boleto',
         html,
         gifPath,
+        pdfAttachment,
+        osNumber,
       )
       this.orderService.updateStatusSendEmailSchedule(
         osId,
@@ -102,17 +126,49 @@ export class ScheduleBoletoService {
     }, 5000)
   }
 
+  async findFileByOrderNumber(orderNumber: string): Promise<string | null> {
+    const folderPath = path.join('dist', 'Modules', 'boletos')
+    const fileName = `${orderNumber}.pdf`
+    const filePath = path.join(folderPath, fileName)
+
+    try {
+      // Check if the file exists
+      if (fs.existsSync(filePath)) {
+        // Read the file and return the content as a Buffer
+        return filePath
+      } else {
+        return null // File not found
+      }
+    } catch (err) {
+      this.logger.error('[SISTEMA] - Error accessing the folder or file:', err)
+      return null
+    }
+  }
+
   async sendOrUpdate(
     osId: string,
     days: number,
     name: string,
     clientId: string,
+    osNumber: string,
   ) {
-    const resultClient = await this.clientService.findOne(clientId)
-    if (!!resultClient.email) {
-      await this.onSendEmail(resultClient.email, osId, days, name)
+    const pdfAttachment = await this.findFileByOrderNumber(osNumber)
+    if (pdfAttachment) {
+      const resultClient = await this.clientService.findOne(clientId)
+      if (!!resultClient.email) {
+        await this.onSendEmail(
+          resultClient.email,
+          osId,
+          days,
+          name,
+          pdfAttachment,
+          osNumber,
+        )
+      } else {
+        await this.clientService.updateRegisterNotification(clientId, true)
+      }
     } else {
-      await this.clientService.updateRegisterNotification(clientId, true)
+      await this.orderService.updateBoletoUploaded(osNumber, false)
     }
   }
 
@@ -129,6 +185,7 @@ export class ScheduleBoletoService {
       const clientId = orderServiceItem?.client?.id
       const osId = orderServiceItem?.id
       const name = orderServiceItem?.client?.name
+      const osNumber = orderServiceItem?.osNumber
 
       const maturityDate = parse(
         orderServiceItem.maturityOfTheBoleto || '',
@@ -144,7 +201,7 @@ export class ScheduleBoletoService {
           format(maturityDate, 'yyyy-MM-dd')
         ) {
           if (!orderServiceItem.isSendNowDayMaturityBoleto) {
-            await this.sendOrUpdate(osId, 0, name, clientId)
+            await this.sendOrUpdate(osId, 0, name, clientId, osNumber)
           }
         }
         if (
@@ -154,7 +211,7 @@ export class ScheduleBoletoService {
           })
         ) {
           if (!orderServiceItem.isSendThreeDayMaturityBoleto) {
-            await this.sendOrUpdate(osId, 3, name, clientId)
+            await this.sendOrUpdate(osId, 3, name, clientId, osNumber)
           }
         }
       }
@@ -168,13 +225,10 @@ export class ScheduleBoletoService {
     //   console.log('Tarefa agendada executada!')
     // })
 
-    const templatePath = path.resolve('ip.json')
-    const templateContent = fs.readFileSync(templatePath, 'utf8')
-
     cron.schedule('*/1 * * * *', async () => {
-      // if (isDevelopmentEnvironment()) {
-      //   await this.getMaturityOfTheBoleto()
-      // }
+      if (isDevelopmentEnvironment()) {
+        await this.getMaturityOfTheBoleto()
+      }
     })
   }
 }
