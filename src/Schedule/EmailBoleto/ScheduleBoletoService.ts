@@ -227,10 +227,15 @@ export class ScheduleBoletoService {
 
     //  A cada minuto: '*/1 * * * *'
 
-    cron.schedule('0 8 * * *', async () => {
-      if (!isDevelopmentEnvironment()) {
+    cron.schedule('*/1 * * * *', async () => {
+      if (isDevelopmentEnvironment()) {
         await this.getMaturityOfTheBoleto()
       }
     })
+    // cron.schedule('0 8 * * *', async () => {
+    //   if (!isDevelopmentEnvironment()) {
+    //     await this.getMaturityOfTheBoleto()
+    //   }
+    // })
   }
 }

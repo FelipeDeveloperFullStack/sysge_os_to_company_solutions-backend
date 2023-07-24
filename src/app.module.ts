@@ -16,9 +16,11 @@ import {ServicesModule} from './Modules/Service/services.module'
 import {OrderServicesModule} from './Modules/OrderService/services.module'
 import {ExpensesModule} from './Modules/Expense/expenses.module'
 import {ScheduleBoletoService} from './Schedule/EmailBoleto/ScheduleBoletoService'
+import {MulterModule} from '@nestjs/platform-express'
 
 @Module({
   imports: [
+    MulterModule.register(), // Adicione a configuração do multer aqui
     MongooseModule.forRoot(process.env.MONGODB_URL),
     ScheduleModule.forRoot(),
     ConfigModule.forRoot({

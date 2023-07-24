@@ -12,10 +12,15 @@ import {
   Headers,
   HttpCode,
   UploadedFile,
+  UploadedFiles,
   UseInterceptors,
-} from '@nestjs/common/decorators'
+} from '@nestjs/common'
 import {HttpStatus} from '@nestjs/common/enums'
-import {FileInterceptor} from '@nestjs/platform-express'
+import {
+  FileFieldsInterceptor,
+  FileInterceptor,
+  FilesInterceptor,
+} from '@nestjs/platform-express'
 import {DocumentChangeStatusDto} from './dto/documentChangeStatus.dto'
 import {ServiceDto} from './dto/service.dto'
 import {ServiceFilterDto} from './dto/service.filter.dto'
@@ -51,9 +56,12 @@ export class ServiceController {
   }
 
   @Post('upload/boleto/:osNumber')
-  @UseInterceptors(FileInterceptor('file'))
-  uploadBoleto(@UploadedFile() file: any, @Param('osNumber') osNumber: string) {
-    return this.serviceService.uploadBoleto(file, osNumber)
+  @UseInterceptors(FileFieldsInterceptor([{name: 'file[]', maxCount: 10}]))
+  async uploadBoleto(
+    @UploadedFiles() files: Express.Multer.File[],
+    @Param('osNumber') osNumber: string,
+  ) {
+    return this.serviceService.uploadBoleto(files['file[]'], osNumber)
   }
 
   @Get('total/incomes')

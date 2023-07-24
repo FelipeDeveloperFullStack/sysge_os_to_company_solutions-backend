@@ -92,8 +92,8 @@ export class ServiceService {
     }
   }
 
-  async uploadBoleto(file: any, osNumber: string) {
-    if (!file) {
+  async uploadBoleto(files: any[], osNumber: string) {
+    if (!files.length) {
       throw new HttpException(
         {
           message: 'Nenhum arquivo foi enviado.',
@@ -106,16 +106,20 @@ export class ServiceService {
     if (!fs.existsSync(folderPath)) {
       fs.mkdirSync(folderPath)
     }
-    // Renomear o arquivo com o número da ordem de serviço
-    const newFileName = `${osNumber}.pdf`
-    const newFilePath = path.join(folderPath, newFileName)
     try {
-      this.logger.log(
-        `[Sistema] - Salvando o boleto ${osNumber}.pdf na pasta 'boleto'...`,
-      )
-      await fs.promises.writeFile(newFilePath, file.buffer)
-      this.logger.log(`[Sistema] - 'Arquivo salvo com sucesso!'`)
-      await this.updateBoletoUploaded(osNumber, true)
+      files.forEach(async (file, index) => {
+        // Renomear o arquivo com o número da ordem de serviço
+        const newFileName = `[${osNumber}]-${index + 1}.pdf`
+        const newFilePath = path.join(folderPath, newFileName)
+        this.logger.log(
+          `[Sistema] - Salvando o boleto ${newFileName} na pasta 'boleto'...`,
+        )
+        await fs.promises.writeFile(newFilePath, file.buffer)
+        this.logger.log(
+          `[Sistema] - 'Arquivo ${newFileName} salvo com sucesso!'`,
+        )
+        await this.updateBoletoUploaded(osNumber, true)
+      })
       return {message: 'ok'}
     } catch (error) {
       throw new HttpException(
