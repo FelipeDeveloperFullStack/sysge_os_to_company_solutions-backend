@@ -11,6 +11,11 @@ import {addDays, isWithinInterval, parse, isEqual, format} from 'date-fns'
 import {DateTime} from 'luxon'
 import {ClientsService} from 'src/Modules/Clients/clients.service'
 
+type FileType = {
+  path: string
+  fileName: string
+}
+
 @Injectable()
 export class ScheduleBoletoService {
   private logger = new Logger()
@@ -44,7 +49,7 @@ export class ScheduleBoletoService {
     subject: string,
     body: string,
     gifPath: string,
-    pdfAttachment: string,
+    pdfAttachment: FileType[],
     orderNumber: string,
   ) {
     const mailOptions = {
@@ -61,13 +66,13 @@ export class ScheduleBoletoService {
       ],
     }
 
-    const nameBoletoFile = `BOLETO REFERENTE A ORDEM DE SERVICO DE NUMERO ${orderNumber}.pdf`
-
-    if (pdfAttachment) {
-      mailOptions.attachments.push({
-        filename: nameBoletoFile,
-        path: pdfAttachment,
-        cid: nameBoletoFile,
+    if (pdfAttachment.length) {
+      pdfAttachment.forEach((attachment) => {
+        mailOptions.attachments.push({
+          filename: attachment.fileName,
+          path: attachment.path,
+          cid: attachment.fileName,
+        })
       })
     }
 
@@ -84,7 +89,7 @@ export class ScheduleBoletoService {
     osId: string,
     days: number,
     clientName: string,
-    pdfAttachment: string,
+    pdfAttachment: FileType[],
     osNumber: string,
   ) {
     const gifPath = path.resolve(
@@ -126,19 +131,31 @@ export class ScheduleBoletoService {
     }, 5000)
   }
 
-  async findFileByOrderNumber(orderNumber: string): Promise<string | null> {
+  async findFileByOrderNumber(orderNumber: string): Promise<FileType[] | null> {
     const folderPath = path.join('dist', 'Modules', 'boletos')
-    const fileName = `${orderNumber}.pdf`
-    const filePath = path.join(folderPath, fileName)
+    //const fileName = `${orderNumber}.pdf`
+    //const filePath = path.join(folderPath, fileName)
 
     try {
-      // Check if the file exists
-      if (fs.existsSync(filePath)) {
-        // Read the file and return the content as a Buffer
-        return filePath
-      } else {
-        return null // File not found
+      const files = fs.readdirSync(folderPath)
+      const matchingFiles = files.filter((fileName) => {
+        const regex = /\[OS\s+(\d+)\]/i
+        const match = fileName.match(regex)
+        return match && match[1] === orderNumber
+      })
+
+      // If no matching files are found, return null
+      if (matchingFiles.length === 0) {
+        return null
       }
+      // Convert the file names to file paths
+      const filePaths = matchingFiles.map((fileName) => {
+        return {
+          path: path.join(folderPath, fileName),
+          fileName,
+        }
+      })
+      return filePaths
     } catch (err) {
       this.logger.error('[SISTEMA] - Error accessing the folder or file:', err)
       return null

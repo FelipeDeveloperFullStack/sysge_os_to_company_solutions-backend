@@ -92,7 +92,7 @@ export class ServiceService {
     }
   }
 
-  async uploadBoleto(files: any[], osNumber: string) {
+  async uploadBoleto(files: Express.Multer.File[], osNumber: string) {
     if (!files.length) {
       throw new HttpException(
         {
@@ -109,7 +109,9 @@ export class ServiceService {
     try {
       files.forEach(async (file, index) => {
         // Renomear o arquivo com o número da ordem de serviço
-        const newFileName = `[${osNumber}]-${index + 1}.pdf`
+        const newFileName = `${String(file.originalname)
+          .toUpperCase()
+          .replace('.PDF', '')} - REF.[OS ${osNumber}].pdf`
         const newFilePath = path.join(folderPath, newFileName)
         this.logger.log(
           `[Sistema] - Salvando o boleto ${newFileName} na pasta 'boleto'...`,
@@ -514,15 +516,29 @@ export class ServiceService {
 
   async deleteFileByOrderNumber(orderNumber: string) {
     const folderPath = path.join('dist', 'Modules', 'boletos')
-    const fileName = `${orderNumber}.pdf`
-    const filePath = path.join(folderPath, fileName)
+    //const fileName = `${orderNumber}.pdf`
+    //const filePath = path.join(folderPath, fileName)
+
+    const files = fs.readdirSync(folderPath)
+    const matchingFiles = files.filter((fileName) => {
+      const regex = /\[OS\s+(\d+)\]/i
+      const match = fileName.match(regex)
+      return match && match[1] === orderNumber
+    })
+    const filePaths = matchingFiles.map((fileName) => {
+      return {
+        path: path.join(folderPath, fileName),
+      }
+    })
 
     try {
       // Check if the file exists
-      if (fs.existsSync(filePath)) {
-        // Delete the file
-        fs.unlinkSync(filePath)
-      }
+      filePaths.forEach((path) => {
+        if (fs.existsSync(path.path)) {
+          // Delete the file
+          fs.unlinkSync(path.path)
+        }
+      })
     } catch (err) {
       console.error('Error accessing the folder or file:', err)
       return false
