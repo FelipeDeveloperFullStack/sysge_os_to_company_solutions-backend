@@ -1,9 +1,9 @@
 import * as fs from 'fs'
 import * as readline from 'readline'
 import {google, Auth} from 'googleapis'
-import {resolve} from 'path'
-import express from 'express'
-import opn from 'opn'
+import * as path from 'path'
+import {format, subDays} from 'date-fns'
+import readCSVFile from './functions/ReactFileCSV'
 
 const SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 const PORT = 3005
@@ -11,7 +11,7 @@ const REDIRECT_URL = `http://localhost:${PORT}`
 const TOKEN_FILE_GMAIL = 'token_gmail.json'
 
 async function authenticate(): Promise<Auth.OAuth2Client> {
-  const CREDENTIALS_DEVELOPMENT = resolve(
+  const CREDENTIALS_DEVELOPMENT = path.resolve(
     'secret_google_drive/client_secret_gmail_development.json',
   )
   const credentials = JSON.parse(
@@ -52,27 +52,6 @@ async function getNewToken(
     output: process.stdout,
   })
 
-  // const app = express()
-  // app.get('/', (req, res) => {
-  //   const code = req.query.code as string
-  //   res.send('Authentication successful. You can close this tab now.')
-  //   exchangeCodeForToken(code, oAuth2Client)
-  // })
-
-  // const server = app.listen(PORT, () => {
-  //   opn(authUrl)
-  //   console.log('Authorize this app by visiting the following URL:')
-  //   console.log(authUrl)
-  //   console.log(`Listening on ${REDIRECT_URL}`)
-  // })
-
-  // return new Promise((resolve, reject) => {
-  //   server.on('error', reject)
-  //   server.on('close', () => {
-  //     reject(new Error('Server closed before receiving authorization code.'))
-  //   })
-  // })
-
   return new Promise((resolve, reject) => {
     rl.question('Enter the code from that page here: ', async (code) => {
       rl.close()
@@ -104,15 +83,11 @@ async function exchangeCodeForToken(
   }
 }
 
-async function downloadAttachments(
-  auth: Auth.OAuth2Client,
-  message: any,
-  destFolder: string,
-) {
+async function downloadAttachments(auth: Auth.OAuth2Client, message: any) {
   const gmail = google.gmail({version: 'v1', auth})
 
   const attachments = message.payload.parts?.filter(
-    (part: any) => part.filename && part.filename.endsWith('.pdf'),
+    (part: any) => part.filename && part.filename.endsWith('.csv'),
   )
 
   if (attachments && attachments.length > 0) {
@@ -130,10 +105,30 @@ async function downloadAttachments(
         const filename = attachment.filename
 
         if (fileData) {
-          const fileBuffer = Buffer.from(fileData, 'base64')
-          const filePath = `${destFolder}/${filename}`
-          fs.writeFileSync(filePath, fileBuffer)
-          console.log(`Attachment saved: ${filePath}`)
+          //const fileBuffer = Buffer.from(fileData, 'base64')
+          // const filePath = `${destFolder}/${filename}`
+          const folderPath = path.join('dist', 'Modules', 'files_gmail_nubank')
+          if (!fs.existsSync(folderPath)) {
+            fs.mkdirSync(folderPath)
+          }
+          const filePath = path.join(
+            'dist',
+            'Modules',
+            'files_gmail_nubank',
+            filename,
+          )
+          const csvFile = fileData.split(';base64,').pop()
+          new Promise<void>((resolve, reject) => {
+            fs.writeFile(filePath, csvFile, {encoding: 'base64'}, (err) => {
+              if (err) {
+                reject(err)
+              } else {
+                resolve()
+              }
+            })
+          })
+          //fs.writeFileSync(folderPath, fileBuffer)
+          // console.log(`Attachment saved: ${filePath}`)
         }
       }
     }
@@ -146,25 +141,41 @@ export const readEmailsWithAttachments = async () => {
 
     const gmail = google.gmail({version: 'v1', auth})
 
+    // Get the current date
+    const yesterday = subDays(new Date(), 0)
+
+    const currentDate = format(yesterday, 'yyyy/MM/dd')
+    //const currentDate = new Date().toISOString().split('T')[0]
     const res = await gmail.users.messages.list({
       userId: 'me',
-      q: 'has:attachment filename:pdf',
+      q: `before:${currentDate} has:attachment from:solution.financeiro2012@gmail.com filename:csv`,
+      // q: `is:unread before:${currentDate} has:attachment from:solution.financeiro2012@gmail.com filename:pdf`,
+      //q: 'has:attachment from:solution.financeiro2012@gmail.com filename:csv',
     })
 
     const messages = res.data.messages
     if (messages && messages.length > 0) {
       for (const message of messages) {
+        console.log({message})
         const messageDetails = await gmail.users.messages.get({
           userId: 'me',
           id: message.id,
         })
 
-        await downloadAttachments(
-          auth,
-          messageDetails.data,
-          'files_gmail_nubank',
-        )
+        await downloadAttachments(auth, messageDetails.data)
+
+        // Mark the message as read
+        // await gmail.users.messages.modify({
+        //   userId: 'me',
+        //   id: message.id,
+        //   requestBody: {
+        //     removeLabelIds: ['UNREAD'],
+        //   },
+        // })
       }
+    }
+    if (!messages && !messages?.length) {
+      console.log('[SISTEMA] - Nenhum extrato encontrado.')
     }
   } catch (error) {
     console.error('Error reading emails:', error)
