@@ -20,6 +20,7 @@ import readCSVFile from 'src/Automations/Nubank/functions/ReactFileCSV'
 import {readEmailsWithAttachments} from 'src/Automations/Nubank'
 import {setTimeout} from 'timers/promises'
 import {isDevelopmentEnvironment} from 'src/Common/Functions'
+import readCSVFiles from 'src/Automations/Nubank/functions/ReactFileCSV'
 
 @Injectable()
 export class ExtractNubankService implements OnModuleInit {
@@ -38,38 +39,54 @@ export class ExtractNubankService implements OnModuleInit {
     try {
       const folderPath = path.join('dist', 'Modules', 'files_gmail_nubank')
       const extension = '.csv'
-      const files = fs.readdirSync(folderPath)
-      const ofxFile = files.find((file) => path.extname(file) === extension)
-      const filePath = path.join(folderPath, ofxFile)
-      if (fs.existsSync(filePath)) {
-        this.logger.warn(
-          '[SISTEMA] - Arquivo .csv do extrato bancario, excluido com sucesso.',
-        )
-        fs.unlinkSync(filePath)
+      const files = await fs.promises.readdir(folderPath)
+      for (const file of files) {
+        if (path.extname(file) === extension) {
+          const filePath = path.join(folderPath, file)
+          if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath)
+            console.log(`[SISTEMA] - Arquivo ${file} excluído com sucesso.`)
+          }
+        }
       }
     } catch (err) {
       this.logger.error(err)
     }
   }
 
+  /**
+   * @description
+   * Extrai os emails dos ultimos 7 dias com contem anexo .csv
+   */
   async onModuleInit() {
     cron.schedule('*/1 * * * *', async () => {
-      if (isDevelopmentEnvironment()) {
-        this.logger.debug(
-          '[SISTEMA] - Iniciando a extracao do extrado do nubank...',
-        )
-        await readEmailsWithAttachments()
-        const dataReadable = await readCSVFile()
-        dataReadable.forEach((extract) => {
-          this.create({
-            dateIn: extract.Data,
-            description: extract['Descrição'],
-            id: extract.Identificador,
-            value: String(extract.Valor),
+      if (!isDevelopmentEnvironment()) {
+        try {
+          this.logger.debug(
+            '[SISTEMA] - Iniciando a extracao do extrado do nubank...',
+          )
+          await readEmailsWithAttachments()
+          const dataReadable = await readCSVFiles()
+          dataReadable.forEach(async (extract) => {
+            const hasExtract = await this.findOne(
+              String(extract.Identificador).trim(),
+            )
+            if (!hasExtract) {
+              this.create({
+                dateIn: extract.Data,
+                description: extract['Descrição'],
+                id: extract.Identificador,
+                value: String(extract.Valor),
+              })
+            }
           })
-        })
-        this.deleteCSVFile()
-        this.logger.debug('[SISTEMA] - Procedimento finalizado.')
+          if (dataReadable.length) {
+            await this.deleteCSVFile()
+            this.logger.debug('[SISTEMA] - Procedimento finalizado.')
+          }
+        } catch (err) {
+          this.logger.error(err)
+        }
       }
     })
   }
@@ -79,17 +96,13 @@ export class ExtractNubankService implements OnModuleInit {
       ...extract,
       dateIn: extract.dateIn,
       value: extract.value,
-      id: extract.id,
+      id: String(extract.id).trim(),
       description: String(extract.description).toUpperCase(),
     }
     const extractNumbank = new this.nubankModel(extract)
 
-    const hasExtract = await this.findOne(extract.id)
-
     try {
-      if (!hasExtract) {
-        extractNumbank.save()
-      }
+      extractNumbank.save()
       return {
         status: HttpStatus.CREATED,
       }

@@ -14,25 +14,15 @@ import {ExtractNubankFilterDto} from './dto/nubank.filter.dto'
 
 @Controller('nubank')
 export class ExtractNubankController {
-  constructor(private readonly equipamentService: ExtractNubankService) {}
-
-  @Post()
-  create(@Body() createEquipamentDto: ExtractNubankDto) {
-    return this.equipamentService.create(createEquipamentDto)
-  }
+  constructor(private readonly extractNubankService: ExtractNubankService) {}
 
   @Get('extract')
-  findAll(@Query() equipamentParam: ExtractNubankFilterDto) {
-    return this.equipamentService.findAll(equipamentParam)
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.equipamentService.findOne(id)
+  findAll(@Query() extractDto: ExtractNubankFilterDto) {
+    return this.extractNubankService.findAll(extractDto)
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.equipamentService.remove(id)
+    return this.extractNubankService.remove(id)
   }
 }

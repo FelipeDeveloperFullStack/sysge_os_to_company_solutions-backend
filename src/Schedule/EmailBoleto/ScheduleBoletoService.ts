@@ -249,10 +249,10 @@ export class ScheduleBoletoService {
         await this.getMaturityOfTheBoleto()
       }
     })
-    // cron.schedule('0 8 * * *', async () => {
-    //   if (!isDevelopmentEnvironment()) {
-    //     await this.getMaturityOfTheBoleto()
-    //   }
-    // })
+    cron.schedule('0 8 * * *', async () => {
+      if (!isDevelopmentEnvironment()) {
+        await this.getMaturityOfTheBoleto()
+      }
+    })
   }
 }

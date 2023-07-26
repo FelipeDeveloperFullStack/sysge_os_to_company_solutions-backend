@@ -128,7 +128,7 @@ async function downloadAttachments(auth: Auth.OAuth2Client, message: any) {
             })
           })
           //fs.writeFileSync(folderPath, fileBuffer)
-          // console.log(`Attachment saved: ${filePath}`)
+          console.log(`Attachment saved: ${filePath}`)
         }
       }
     }
@@ -142,13 +142,18 @@ export const readEmailsWithAttachments = async () => {
     const gmail = google.gmail({version: 'v1', auth})
 
     // Get the current date
-    const yesterday = subDays(new Date(), 0)
-
-    const currentDate = format(yesterday, 'yyyy/MM/dd')
+    //const yesterday = subDays(new Date(), 0)
+    //const currentDate = format(yesterday, 'yyyy/MM/dd')
     //const currentDate = new Date().toISOString().split('T')[0]
+    //const currentDate = format(new Date(), 'yyyy-MM-dd') // Obtém a data atual no formato 'YYYY-MM-DD'
+
+    const sevenDaysAgo = subDays(new Date(), 7)
+    const sevenDaysAgoFormatted = format(sevenDaysAgo, 'yyyy-MM-dd') // Obtém a data de 7 dias atrás no formato 'YYYY-MM-DD'
+
     const res = await gmail.users.messages.list({
       userId: 'me',
-      q: `before:${currentDate} has:attachment from:solution.financeiro2012@gmail.com filename:csv`,
+      q: `after:${sevenDaysAgoFormatted} has:attachment from:solution.financeiro2012@gmail.com filename:csv`,
+      //q: `older_than:0d has:attachment from:solution.financeiro2012@gmail.com filename:csv`,
       // q: `is:unread before:${currentDate} has:attachment from:solution.financeiro2012@gmail.com filename:pdf`,
       //q: 'has:attachment from:solution.financeiro2012@gmail.com filename:csv',
     })
@@ -156,12 +161,10 @@ export const readEmailsWithAttachments = async () => {
     const messages = res.data.messages
     if (messages && messages.length > 0) {
       for (const message of messages) {
-        console.log({message})
         const messageDetails = await gmail.users.messages.get({
           userId: 'me',
           id: message.id,
         })
-
         await downloadAttachments(auth, messageDetails.data)
 
         // Mark the message as read
