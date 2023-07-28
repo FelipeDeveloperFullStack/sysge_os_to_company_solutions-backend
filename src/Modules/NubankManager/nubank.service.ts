@@ -60,9 +60,10 @@ export class ExtractNubankService implements OnModuleInit {
   /**
    * @description
    * Extrai os emails dos ultimos 7 dias com contem anexo .csv
+   * Todos os dias as 5 horas da manha.
    */
   async onModuleInit() {
-    cron.schedule('*/1 * * * *', async () => {
+    cron.schedule('0 5 * * *', async () => {
       if (!isDevelopmentEnvironment()) {
         try {
           this.logger.debug(
