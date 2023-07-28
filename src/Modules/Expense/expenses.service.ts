@@ -1,7 +1,7 @@
 import {HttpException, HttpStatus, Injectable} from '@nestjs/common'
 import {InjectModel} from '@nestjs/mongoose'
 import {Model} from 'mongoose'
-import {formatInputPrice} from 'src/Common/Helpers/formatPrice'
+import {formatInputPrice, formatPrice} from 'src/Common/Helpers/formatPrice'
 import {ExpenselDto} from './dto/expense.dto'
 import {ExpenseFilterDto} from './dto/expense.filter.dto'
 import {Expense as _Model, ModelDocument} from './entities/expense.entity'
@@ -58,8 +58,34 @@ export class ExpenseService {
     return await this.expenseModel.find(service)
   }
 
+  async findAllPersonalExpense() {
+    const resultExpense = await this.expenseModel.find()
+
+    const regexConta = /CONTA:\s*9707453-5/g
+    let totalSum = 0
+    const expenseList = []
+    resultExpense.forEach((expense) => {
+      const match = expense.expense.match(regexConta)
+      if (match) {
+        const {clean} = formatInputPrice(expense.value)
+        totalSum += clean
+        expenseList.push({
+          description: expense.expense,
+          value: expense.value,
+          dateIn: expense.dateIn,
+        })
+      }
+    })
+
+    return {total: totalSum, data: expenseList}
+  }
+
   async findOne(id: string) {
     return await this.expenseModel.findOne({_id: id})
+  }
+
+  async findOneIdNubank(idNubank: string) {
+    return await this.expenseModel.findOne({idNubank})
   }
 
   async update(id: string, dto: ExpenselDto, user: string) {

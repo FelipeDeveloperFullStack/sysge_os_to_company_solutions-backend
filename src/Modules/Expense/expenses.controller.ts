@@ -27,6 +27,11 @@ export class ModelController {
     return this.modelExpense.findAll(modelParam)
   }
 
+  @Get('personal')
+  findAllPersonalExpense() {
+    return this.modelExpense.findAllPersonalExpense()
+  }
+
   @Get('expired')
   expiredExpenses() {
     return this.modelExpense.getExpensesData()

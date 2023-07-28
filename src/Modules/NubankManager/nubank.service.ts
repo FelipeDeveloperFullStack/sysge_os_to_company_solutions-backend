@@ -21,6 +21,8 @@ import {readEmailsWithAttachments} from 'src/Automations/Nubank'
 import {setTimeout} from 'timers/promises'
 import {isDevelopmentEnvironment} from 'src/Common/Functions'
 import readCSVFiles from 'src/Automations/Nubank/functions/ReactFileCSV'
+import {ExpenseService} from '../Expense/expenses.service'
+import {formatInputPrice, formatPrice} from 'src/Common/Helpers/formatPrice'
 
 @Injectable()
 export class ExtractNubankService implements OnModuleInit {
@@ -33,6 +35,7 @@ export class ExtractNubankService implements OnModuleInit {
   constructor(
     @InjectModel(ExtractNubank.name)
     private nubankModel: Model<ExtractNubankDocument>,
+    private readonly expense: ExpenseService,
   ) {}
 
   async deleteCSVFile() {
@@ -68,16 +71,29 @@ export class ExtractNubankService implements OnModuleInit {
           await readEmailsWithAttachments()
           const dataReadable = await readCSVFiles()
           dataReadable.forEach(async (extract) => {
-            const hasExtract = await this.findOne(
+            const hasExtract = await this.expense.findOneIdNubank(
               String(extract.Identificador).trim(),
             )
             if (!hasExtract) {
-              this.create({
-                dateIn: extract.Data,
-                description: extract['Descrição'],
-                id: extract.Identificador,
-                value: String(extract.Valor),
-              })
+              // this.create({
+              //   dateIn: extract.Data,
+              //   description: extract['Descrição'],
+              //   id: extract.Identificador,
+              //   value: String(extract.Valor),
+              // })
+              const formated = formatPrice(extract.Valor)
+              this.expense.create(
+                {
+                  dateIn: extract.Data,
+                  expense: extract['Descrição'],
+                  maturity: '',
+                  status: 'PAGO',
+                  value: formated,
+                  user: 'NUBANK',
+                  idNubank: extract.Identificador,
+                },
+                'NUBANK',
+              )
             }
           })
           if (dataReadable.length) {
