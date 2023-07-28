@@ -51,11 +51,15 @@ export class ExpenseService {
     return {total: total}
   }
 
-  async findAll(filter: ExpenseFilterDto) {
-    const service = {
-      expense: new RegExp(filter.expense, 'i'),
+  async findAll(filter?: ExpenseFilterDto) {
+    if (filter) {
+      const service = {
+        expense: new RegExp(filter.expense, 'i'),
+      }
+      return await this.expenseModel.find(service)
+    } else {
+      return await this.expenseModel.find()
     }
-    return await this.expenseModel.find(service)
   }
 
   async findAllPersonalExpense() {

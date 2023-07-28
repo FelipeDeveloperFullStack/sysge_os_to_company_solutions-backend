@@ -18,6 +18,7 @@ import {ExpensesModule} from './Modules/Expense/expenses.module'
 import {ScheduleBoletoService} from './Schedule/EmailBoleto/ScheduleBoletoService'
 import {MulterModule} from '@nestjs/platform-express'
 import {ExtractNubankModule} from './Modules/NubankManager/nubank.module'
+import {ChartModule} from './Modules/Chart/chart.module'
 
 @Module({
   imports: [
@@ -57,6 +58,7 @@ import {ExtractNubankModule} from './Modules/NubankManager/nubank.module'
     ModelsModule,
     ExpensesModule,
     ExtractNubankModule,
+    ChartModule,
   ],
   controllers: [],
   providers: [ScheduleBoletoService],
