@@ -159,7 +159,8 @@ export class ServiceService {
       const element = orderServices[index]
       if (
         String(element.status).trim() === 'PENDENTE' &&
-        String(element.formOfPayment).trim() === 'Boleto'
+        String(element.formOfPayment).trim() === 'Boleto' &&
+        !element.isBoletoUploaded
       ) {
         const hasBoletoFile = await this.findFileByOrderNumber(element.osNumber)
         if (!hasBoletoFile) {
@@ -168,6 +169,17 @@ export class ServiceService {
       }
     }
     return orders
+  }
+
+  removeDuplicatesByProperty(arr: any[]): any[] {
+    const uniqueMap = new Map<string, any>()
+    arr.forEach((item) => {
+      const key = item._id.toString()
+      if (!uniqueMap.has(key)) {
+        uniqueMap.set(key, item)
+      }
+    })
+    return Array.from(uniqueMap.values())
   }
 
   async getTotalClientWithoutEmail() {
@@ -186,7 +198,7 @@ export class ServiceService {
         }
       }
     }
-    return clients
+    return this.removeDuplicatesByProperty(clients)
   }
 
   async findAll(serviceFilter: ServiceFilterDto) {

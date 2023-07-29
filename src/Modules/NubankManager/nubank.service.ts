@@ -39,21 +39,23 @@ export class ExtractNubankService implements OnModuleInit {
   ) {}
 
   async deleteCSVFile() {
-    try {
-      const folderPath = path.join('dist', 'Modules', 'files_gmail_nubank')
-      const extension = '.csv'
-      const files = await fs.promises.readdir(folderPath)
-      for (const file of files) {
-        if (path.extname(file) === extension) {
-          const filePath = path.join(folderPath, file)
-          if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath)
-            console.log(`[SISTEMA] - Arquivo ${file} excluído com sucesso.`)
+    const folderPath = path.join('dist', 'Modules', 'files_gmail_nubank')
+    if (fs.existsSync(folderPath)) {
+      try {
+        const extension = '.csv'
+        const files = await fs.promises.readdir(folderPath)
+        for (const file of files) {
+          if (path.extname(file) === extension) {
+            const filePath = path.join(folderPath, file)
+            if (fs.existsSync(filePath)) {
+              fs.unlinkSync(filePath)
+              console.log(`[SISTEMA] - Arquivo ${file} excluído com sucesso.`)
+            }
           }
         }
+      } catch (err) {
+        this.logger.error('Erro aqui', err)
       }
-    } catch (err) {
-      this.logger.error(err)
     }
   }
 
@@ -63,7 +65,9 @@ export class ExtractNubankService implements OnModuleInit {
    * Todos os dias as 5 horas da manha.
    */
   async onModuleInit() {
-    cron.schedule('0 5 * * *', async () => {
+    //  A cada minuto: '*/1 * * * *'
+    //  Todos os dias as 5:00hrs da manha: '0 5 * * *'
+    cron.schedule('*/5 * * * *', async () => {
       if (!isDevelopmentEnvironment()) {
         try {
           this.logger.debug(
@@ -71,7 +75,7 @@ export class ExtractNubankService implements OnModuleInit {
           )
           await readEmailsWithAttachments()
           const dataReadable = await readCSVFiles()
-          dataReadable.forEach(async (extract) => {
+          dataReadable?.forEach(async (extract) => {
             const hasExtract = await this.expense.findOneIdNubank(
               String(extract.Identificador).trim(),
             )
@@ -97,7 +101,7 @@ export class ExtractNubankService implements OnModuleInit {
               )
             }
           })
-          if (dataReadable.length) {
+          if (dataReadable?.length) {
             await this.deleteCSVFile()
             this.logger.debug('[SISTEMA] - Procedimento finalizado.')
           }

@@ -4,16 +4,22 @@ import {google, Auth} from 'googleapis'
 import * as path from 'path'
 import {format, subDays} from 'date-fns'
 import readCSVFile from './functions/ReactFileCSV'
+import {isDevelopmentEnvironment} from 'src/Common/Functions'
 
 const SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 const PORT = 3005
 const REDIRECT_URL = `http://localhost:${PORT}`
-const TOKEN_FILE_GMAIL = 'token_gmail.json'
+const getTokenGmailFile = () => {
+  return isDevelopmentEnvironment()
+    ? 'token_gmail.json'
+    : 'token_gmail_production.json'
+}
 
 async function authenticate(): Promise<Auth.OAuth2Client> {
-  const CREDENTIALS_DEVELOPMENT = path.resolve(
-    'secret_google_drive/client_secret_gmail_development.json',
-  )
+  const CREDENTIALS_DEVELOPMENT = isDevelopmentEnvironment()
+    ? path.resolve('secret_google_drive/client_secret_gmail_development.json')
+    : path.resolve('secret_google_drive/client_secret_gmail_production.json')
+
   const credentials = JSON.parse(
     fs.readFileSync(CREDENTIALS_DEVELOPMENT).toString(),
   )
@@ -27,8 +33,8 @@ async function authenticate(): Promise<Auth.OAuth2Client> {
     redirect_uris[0],
   )
 
-  if (fs.existsSync(TOKEN_FILE_GMAIL)) {
-    const token = fs.readFileSync(TOKEN_FILE_GMAIL, 'utf8')
+  if (fs.existsSync(getTokenGmailFile())) {
+    const token = fs.readFileSync(getTokenGmailFile(), 'utf8')
     oAuth2Client.setCredentials(JSON.parse(token))
     return oAuth2Client
   } else {
@@ -58,7 +64,7 @@ async function getNewToken(
       try {
         const {tokens} = await oAuth2Client.getToken(code)
         oAuth2Client.setCredentials(tokens)
-        fs.writeFileSync(TOKEN_FILE_GMAIL, JSON.stringify(tokens))
+        fs.writeFileSync(getTokenGmailFile(), JSON.stringify(tokens))
         console.log('Token stored successfully.')
         resolve(oAuth2Client)
       } catch (error) {
@@ -76,7 +82,7 @@ async function exchangeCodeForToken(
   try {
     const {tokens} = await oAuth2Client.getToken(code)
     oAuth2Client.setCredentials(tokens)
-    fs.writeFileSync(TOKEN_FILE_GMAIL, JSON.stringify(tokens))
+    fs.writeFileSync(getTokenGmailFile(), JSON.stringify(tokens))
     console.log('Token stored successfully.')
   } catch (error) {
     console.error('Error retrieving access token:', error)
