@@ -67,7 +67,7 @@ export class ExtractNubankService implements OnModuleInit {
   async onModuleInit() {
     //  A cada minuto: '*/1 * * * *'
     //  Todos os dias as 5:00hrs da manha: '0 5 * * *'
-    cron.schedule('*/5 * * * *', async () => {
+    cron.schedule('0 5 * * *', async () => {
       if (!isDevelopmentEnvironment()) {
         try {
           this.logger.debug(
