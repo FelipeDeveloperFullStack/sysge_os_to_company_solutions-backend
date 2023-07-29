@@ -52,14 +52,28 @@ export class ExpenseService {
   }
 
   async findAll(filter?: ExpenseFilterDto) {
-    if (filter) {
+    // if (filter) {
+    //   const service = {
+    //     expense: new RegExp(filter.expense, 'i'),
+    //   }
+    //   return await this.expenseModel.find(service)
+    // } else {
+    //   return await this.expenseModel.find()
+    // }
+
+    let query = this.expenseModel.find()
+
+    if (filter && filter.expense) {
       const service = {
         expense: new RegExp(filter.expense, 'i'),
       }
-      return await this.expenseModel.find(service)
-    } else {
-      return await this.expenseModel.find()
+      query = query.find(service)
     }
+
+    // Ordenando por "dateIn" em ordem crescente (do mais antigo para o mais recente)
+    query = query.sort({dateIn: -1})
+
+    return await query.exec()
   }
 
   async findAllPersonalExpense() {
