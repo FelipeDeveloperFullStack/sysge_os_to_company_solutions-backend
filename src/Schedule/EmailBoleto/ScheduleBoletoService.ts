@@ -254,5 +254,10 @@ export class ScheduleBoletoService {
         await this.getMaturityOfTheBoleto()
       }
     })
+    cron.schedule('0 12 * * *', async () => {
+      if (!isDevelopmentEnvironment()) {
+        await this.getMaturityOfTheBoleto()
+      }
+    })
   }
 }
