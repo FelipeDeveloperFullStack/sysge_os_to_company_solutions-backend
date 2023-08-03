@@ -23,6 +23,7 @@ import {ClientsService} from '../Clients/clients.service'
 import {DocumentChangeStatusDto} from './dto/documentChangeStatus.dto'
 import {moveFileGoogleDrive} from './googleDrive/moveFileFolderClient'
 import {isDevelopmentEnvironment} from 'src/Common/Functions'
+import * as os from 'os'
 import {
   countAndDeletePDFs,
   deleteAllFilesInFolder,
@@ -102,9 +103,12 @@ export class ServiceService {
       )
     }
     // Verificar se a pasta "boletos" já existe
-    const folderPath = path.join(__dirname, '..', 'boletos')
+    // const folderPath = path.join(__dirname, '..', 'boletos')
+    const userHomeDir = os.homedir()
+    const folderPath = path.join(userHomeDir, 'boletos')
     if (!fs.existsSync(folderPath)) {
-      fs.mkdirSync(folderPath)
+      //fs.mkdirSync(folderPath)
+      fs.mkdirSync(folderPath, {recursive: true})
     }
     try {
       files.forEach(async (file, index) => {
@@ -134,7 +138,9 @@ export class ServiceService {
   }
 
   async findFileByOrderNumber(orderNumber: string): Promise<string | null> {
-    const folderPath = path.join('dist', 'Modules', 'boletos')
+    //const folderPath = path.join('dist', 'Modules', 'boletos')
+    const userHomeDir = os.homedir()
+    const folderPath = path.join(userHomeDir, 'boletos')
     const fileName = `${orderNumber}.pdf`
     const filePath = path.join(folderPath, fileName)
 
@@ -527,7 +533,9 @@ export class ServiceService {
   }
 
   async deleteFileByOrderNumber(orderNumber: string) {
-    const folderPath = path.join('dist', 'Modules', 'boletos')
+    //const folderPath = path.join('dist', 'Modules', 'boletos')
+    const userHomeDir = os.homedir()
+    const folderPath = path.join(userHomeDir, 'boletos')
     //const fileName = `${orderNumber}.pdf`
     //const filePath = path.join(folderPath, fileName)
 

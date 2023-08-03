@@ -10,6 +10,7 @@ import {ServiceService} from 'src/Modules/OrderService/services.service'
 import {addDays, isWithinInterval, parse, isEqual, format} from 'date-fns'
 import {DateTime} from 'luxon'
 import {ClientsService} from 'src/Modules/Clients/clients.service'
+import * as os from 'os'
 
 type FileType = {
   path: string
@@ -132,7 +133,9 @@ export class ScheduleBoletoService {
   }
 
   async findFileByOrderNumber(orderNumber: string): Promise<FileType[] | null> {
-    const folderPath = path.join('dist', 'Modules', 'boletos')
+    //const folderPath = path.join('dist', 'Modules', 'boletos')
+    const userHomeDir = os.homedir()
+    const folderPath = path.join(userHomeDir, 'boletos')
     //const fileName = `${orderNumber}.pdf`
     //const filePath = path.join(folderPath, fileName)
 
