@@ -30,6 +30,7 @@ import {
   deleteMergedPDFs,
   mergePDFsInFolder,
 } from './mergePdf'
+import {removeAccents} from 'src/Common/Helpers/fileNameToDelete'
 
 @Injectable()
 export class ServiceService {
@@ -134,6 +135,67 @@ export class ServiceService {
         },
         HttpStatus.EXPECTATION_FAILED,
       )
+    }
+  }
+
+  async deleteFileByName(fileNameToDelete: string): Promise<boolean> {
+    const userHomeDir = os.homedir()
+    const folderPath = path.join(userHomeDir, 'boletos')
+
+    try {
+      const files = fs.readdirSync(folderPath)
+      const matchingFiles = files.filter((fileName) =>
+        removeAccents(fileName).includes(removeAccents(fileNameToDelete)),
+      )
+
+      if (matchingFiles.length === 0) {
+        return false // File not found
+      }
+
+      await Promise.all(
+        matchingFiles.map(async (fileName) => {
+          const filePath = path.join(folderPath, fileName)
+          await fs.promises.unlink(filePath)
+        }),
+      )
+
+      return true // Successfully deleted the files
+    } catch (err) {
+      this.logger.error('[SISTEMA] - Error accessing the folder or files:', err)
+      return false
+    }
+  }
+
+  async getDocuments(
+    orderNumber: string,
+  ): Promise<{fileName: string; base64: string}[]> {
+    const userHomeDir = os.homedir()
+    const folderPath = path.join(userHomeDir, 'boletos')
+
+    try {
+      const files = fs.readdirSync(folderPath)
+      const regex = new RegExp(`REF\\.\\[OS\\s+${orderNumber}\\]\\.pdf`, 'i')
+      const matchingFiles = files.filter(
+        (fileName) => regex.test(fileName) && fileName.endsWith('.pdf'),
+      )
+
+      if (matchingFiles.length === 0) {
+        return []
+      }
+
+      const fileDataArray = await Promise.all(
+        matchingFiles.map(async (fileName) => {
+          const filePath = path.join(folderPath, fileName)
+          const fileData = await fs.promises.readFile(filePath)
+          const base64Data = fileData.toString('base64')
+          return {fileName, base64: base64Data}
+        }),
+      )
+
+      return fileDataArray
+    } catch (err) {
+      this.logger.error('[SISTEMA] - Error accessing the folder or files:', err)
+      return []
     }
   }
 

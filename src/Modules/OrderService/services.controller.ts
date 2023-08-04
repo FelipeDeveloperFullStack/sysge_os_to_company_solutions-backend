@@ -26,6 +26,10 @@ import {ServiceDto} from './dto/service.dto'
 import {ServiceFilterDto} from './dto/service.filter.dto'
 import {ServiceService} from './services.service'
 
+interface DeleteFileByName {
+  fileName: string
+}
+
 @Controller('orderServices')
 export class ServiceController {
   constructor(private readonly serviceService: ServiceService) {}
@@ -43,6 +47,16 @@ export class ServiceController {
   @Get('total/maturity-boleto')
   getTotalIncomeMaturityOfTheBoleto() {
     return this.serviceService.getIncomeMaturityOfTheBoleto()
+  }
+
+  @Get('documents/:osNumber')
+  getDocuments(@Param('osNumber') osNumber: string) {
+    return this.serviceService.getDocuments(osNumber)
+  }
+
+  @Delete('documents')
+  deleteFileByName(@Query() data: DeleteFileByName) {
+    return this.serviceService.deleteFileByName(data?.fileName)
   }
 
   @Get('total-client-without-email')
