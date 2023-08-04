@@ -180,6 +180,7 @@ export class ServiceService {
       )
 
       if (matchingFiles.length === 0) {
+        await this.updateBoletoUploaded(orderNumber, false)
         return []
       }
 
