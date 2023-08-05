@@ -136,6 +136,9 @@ export class OrderService {
 
   @Prop()
   public isBoletoUploaded: boolean
+
+  @Prop()
+  public isPartial: boolean
 }
 
 export const ServiceSchema = SchemaFactory.createForClass(OrderService)

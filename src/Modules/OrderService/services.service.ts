@@ -31,6 +31,7 @@ import {
   mergePDFsInFolder,
 } from './mergePdf'
 import {removeAccents} from 'src/Common/Helpers/fileNameToDelete'
+import {ServicePartialPaymentDto} from './dto/service.partial.payment.dto'
 
 @Injectable()
 export class ServiceService {
@@ -52,6 +53,104 @@ export class ServiceService {
 
     try {
       service.save()
+      return {
+        status: HttpStatus.CREATED,
+      }
+    } catch (error) {
+      throw new HttpException(
+        {
+          message: error,
+        },
+        HttpStatus.FORBIDDEN,
+      )
+    }
+  }
+
+  async updateOrderServicePartialPayment(
+    servicePartialPaymentDto: ServicePartialPaymentDto,
+    user: string,
+  ) {
+    servicePartialPaymentDto = {
+      ...servicePartialPaymentDto,
+      user,
+    }
+
+    const resultOrderService = await this.findOne(servicePartialPaymentDto.id)
+    const currentOrderService = {
+      isBoletoUploaded: resultOrderService.isBoletoUploaded,
+      status: resultOrderService.status,
+      typeDocument: resultOrderService.typeDocument,
+      formOfPayment: servicePartialPaymentDto.remainingPaymentForm,
+      osNumber: resultOrderService.osNumber,
+      dateOS: resultOrderService.dateOS,
+      dateGeneratedOS: resultOrderService.dateGeneratedOS,
+      equipament: resultOrderService.equipament,
+      brand: resultOrderService.brand,
+      model: resultOrderService.model,
+      serialNumber: resultOrderService.serialNumber,
+      cable: resultOrderService.cable,
+      charger: resultOrderService.charger,
+      breaked: resultOrderService.breaked,
+      detail: resultOrderService.detail,
+      client: resultOrderService.client,
+      itemServices: resultOrderService.itemServices,
+      laudos: resultOrderService.laudos,
+      itemPieces: resultOrderService.itemPieces,
+      manpower: resultOrderService.manpower,
+      discount: resultOrderService.discount,
+      subTotal: resultOrderService.subTotal,
+      total: servicePartialPaymentDto.remainingValue,
+      user: resultOrderService.user,
+      maturityOfTheBoleto: servicePartialPaymentDto.maturity,
+      idFileCreatedGoogleDrive: resultOrderService.idFileCreatedGoogleDrive,
+      isSendThreeDayMaturityBoleto:
+        resultOrderService.isSendThreeDayMaturityBoleto,
+      isSendNowDayMaturityBoleto: resultOrderService.isSendNowDayMaturityBoleto,
+    }
+
+    const newOrderServicePartialPayment = {
+      isBoletoUploaded: resultOrderService.isBoletoUploaded,
+      status: 'PAGO',
+      typeDocument: resultOrderService.typeDocument,
+      formOfPayment: servicePartialPaymentDto.paymentForm,
+      osNumber: resultOrderService.osNumber,
+      dateOS: resultOrderService.dateOS,
+      dateGeneratedOS: resultOrderService.dateGeneratedOS,
+      equipament: resultOrderService.equipament,
+      brand: resultOrderService.brand,
+      model: resultOrderService.model,
+      serialNumber: resultOrderService.serialNumber,
+      cable: resultOrderService.cable,
+      charger: resultOrderService.charger,
+      breaked: resultOrderService.breaked,
+      detail: resultOrderService.detail,
+      client: resultOrderService.client,
+      itemServices: resultOrderService.itemServices,
+      laudos: resultOrderService.laudos,
+      itemPieces: resultOrderService.itemPieces,
+      manpower: resultOrderService.manpower,
+      discount: resultOrderService.discount,
+      subTotal: resultOrderService.subTotal,
+      total: servicePartialPaymentDto.valuePartial,
+      user: resultOrderService.user,
+      maturityOfTheBoleto:
+        servicePartialPaymentDto.paymentForm === 'Boleto'
+          ? resultOrderService.maturityOfTheBoleto
+          : '',
+      idFileCreatedGoogleDrive: resultOrderService.idFileCreatedGoogleDrive,
+      isSendThreeDayMaturityBoleto:
+        resultOrderService.isSendThreeDayMaturityBoleto,
+      isSendNowDayMaturityBoleto: resultOrderService.isSendNowDayMaturityBoleto,
+      isPartial: true,
+    }
+
+    this.logger.log('[SISTEMA] - Adicionando o recebimento parcial...')
+    const service = new this.serviceModel(newOrderServicePartialPayment)
+
+    try {
+      service.save()
+      await this.update(servicePartialPaymentDto.id, currentOrderService)
+      this.logger.log('[SISTEMA] - Procedimento concluído')
       return {
         status: HttpStatus.CREATED,
       }

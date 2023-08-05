@@ -24,6 +24,7 @@ import {
 import {DocumentChangeStatusDto} from './dto/documentChangeStatus.dto'
 import {ServiceDto} from './dto/service.dto'
 import {ServiceFilterDto} from './dto/service.filter.dto'
+import {ServicePartialPaymentDto} from './dto/service.partial.payment.dto'
 import {ServiceService} from './services.service'
 
 interface DeleteFileByName {
@@ -37,6 +38,17 @@ export class ServiceController {
   @Post()
   create(@Body() createServiceDto: ServiceDto, @Headers('user') user: string) {
     return this.serviceService.create(createServiceDto, user)
+  }
+
+  @Put('partial/payment')
+  updateOrderServicePartialPayment(
+    @Body() servicePartialPaymentDto: ServicePartialPaymentDto,
+    @Headers('user') user: string,
+  ) {
+    return this.serviceService.updateOrderServicePartialPayment(
+      servicePartialPaymentDto,
+      user,
+    )
   }
 
   @Get('total')

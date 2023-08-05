@@ -107,4 +107,8 @@ export class ServiceDto {
   @IsOptional()
   @IsBoolean()
   public isBoletoUploaded: boolean
+
+  @IsOptional()
+  @IsBoolean()
+  public isPartial?: boolean
 }
