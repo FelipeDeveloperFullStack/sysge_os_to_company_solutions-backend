@@ -133,8 +133,23 @@ export class ConfigurationSystemService {
   }
   async getQrCode(ip: string, instanceName: string, jwt: string) {
     try {
-      const {data} = await axios.get(
-        `http://${ip}:8083/instance/connect/${instanceName}`,
+      await axios.get(`http://${ip}:8083/instance/connect/${instanceName}`, {
+        headers: {
+          Authorization: `Bearer ${jwt}`,
+        },
+      })
+    } catch (error) {
+      throw error
+    }
+  }
+  async setInstance(instanceName: string, ip: string, jwt: string) {
+    try {
+      await axios.post(
+        `http://${ip}:8083/webhook/set/${instanceName}`,
+        {
+          enabled: true,
+          url: `http://${ip}:3005/configurations`,
+        },
         {
           headers: {
             Authorization: `Bearer ${jwt}`,
@@ -154,6 +169,7 @@ export class ConfigurationSystemService {
     }
     if (ip) {
       const jwt = await this.createInstance(ip, instanceName)
+      await this.setInstance(instanceName, ip, jwt)
       await this.getQrCode(ip, instanceName, jwt)
     }
   }
