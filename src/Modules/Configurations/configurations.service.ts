@@ -169,7 +169,7 @@ export class ConfigurationSystemService {
     }
     if (ip) {
       const jwt = await this.createInstance(ip, instanceName)
-      await this.setInstance(instanceName, ip, jwt)
+      // await this.setInstance(instanceName, ip, jwt)
       await this.getQrCode(ip, instanceName, jwt)
     }
   }
