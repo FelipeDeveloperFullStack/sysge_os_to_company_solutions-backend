@@ -114,6 +114,12 @@ export class OrderService {
   public total: string
 
   @Prop()
+  public valuePartial: string
+
+  @Prop()
+  public remainingValue: string
+
+  @Prop()
   public subTotal: string
 
   @Prop()

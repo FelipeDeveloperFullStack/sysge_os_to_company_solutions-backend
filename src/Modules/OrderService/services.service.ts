@@ -99,6 +99,8 @@ export class ServiceService {
       manpower: resultOrderService.manpower,
       discount: resultOrderService.discount,
       subTotal: resultOrderService.subTotal,
+      remainingValue: servicePartialPaymentDto.remainingValue,
+      valuePartial: servicePartialPaymentDto.valuePartial,
       total: servicePartialPaymentDto.remainingValue,
       user: resultOrderService.user,
       maturityOfTheBoleto: servicePartialPaymentDto.maturity,
@@ -131,6 +133,8 @@ export class ServiceService {
       manpower: resultOrderService.manpower,
       discount: resultOrderService.discount,
       subTotal: resultOrderService.subTotal,
+      remainingValue: servicePartialPaymentDto.remainingValue,
+      valuePartial: servicePartialPaymentDto.valuePartial,
       total: servicePartialPaymentDto.valuePartial,
       user: resultOrderService.user,
       maturityOfTheBoleto:

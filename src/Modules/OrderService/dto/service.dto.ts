@@ -87,6 +87,14 @@ export class ServiceDto {
   public total: string
 
   @IsOptional()
+  @IsString()
+  public valuePartial?: string
+
+  @IsOptional()
+  @IsString()
+  public remainingValue?: string
+
+  @IsOptional()
   public user: string
 
   @IsOptional()
