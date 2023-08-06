@@ -21,14 +21,16 @@ export class ConfigurationSystemService {
   async webhook(response: any) {
     if (response?.event === 'qrcode.updated') {
       console.log({
+        event: response.event,
         state: response?.data?.qrcode,
         stateReason: response?.data?.base64,
       })
     }
     if (response?.event === 'connection.update') {
       console.log({
+        event: response.event,
         state: response?.data?.state,
-        stateReason: response?.data?.stateReason,
+        stateReason: response?.data?.statusReason,
       })
     }
   }
