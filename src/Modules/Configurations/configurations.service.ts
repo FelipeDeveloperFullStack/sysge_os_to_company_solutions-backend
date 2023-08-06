@@ -22,8 +22,7 @@ export class ConfigurationSystemService {
     if (response?.event === 'qrcode.updated') {
       console.log({
         event: response.event,
-        state: response?.data?.qrcode,
-        stateReason: response?.data?.base64,
+        base64: response?.data?.qrcode?.base64,
       })
     }
     if (response?.event === 'connection.update') {
