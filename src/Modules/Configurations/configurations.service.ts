@@ -148,7 +148,7 @@ export class ConfigurationSystemService {
 
   async connectWhatsapp() {
     let ip = undefined
-    const instanceName = 'solutions'
+    const instanceName = String(Math.random())
     if (fs.existsSync('ip.json')) {
       ip = await this.readIPFromFile()
     }
