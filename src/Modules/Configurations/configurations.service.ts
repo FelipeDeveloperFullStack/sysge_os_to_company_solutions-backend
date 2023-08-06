@@ -18,8 +18,19 @@ export class ConfigurationSystemService {
     private configurationSystemModel: Model<ConfigurationSystemDocument>,
   ) {}
 
-  async webhook(data: any) {
-    console.log(data)
+  async webhook(response: any) {
+    if (response?.event === 'qrcode.updated') {
+      console.log({
+        state: response?.data?.qrcode,
+        stateReason: response?.data?.base64,
+      })
+    }
+    if (response?.event === 'connection.update') {
+      console.log({
+        state: response?.data?.state,
+        stateReason: response?.data?.stateReason,
+      })
+    }
   }
 
   async createOrUpdate(config: ConfigurationSystemDto) {
