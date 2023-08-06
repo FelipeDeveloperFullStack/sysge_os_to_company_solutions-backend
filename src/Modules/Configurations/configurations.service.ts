@@ -31,7 +31,7 @@ export class ConfigurationSystemService {
         base64: response?.data?.qrcode?.base64,
       }
       const io = this.socketService.getIo()
-      io.emit(QRCODE_UPDATED, data)
+      io?.emit(QRCODE_UPDATED, data)
     }
     if (response?.event === CONNECTION_UPDATE) {
       const data = {
@@ -40,7 +40,7 @@ export class ConfigurationSystemService {
         stateReason: response?.data?.statusReason,
       }
       const io = this.socketService.getIo()
-      io.emit(CONNECTION_UPDATE, data)
+      io?.emit(CONNECTION_UPDATE, data)
     }
   }
 

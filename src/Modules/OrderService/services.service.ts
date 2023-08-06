@@ -440,7 +440,7 @@ export class ServiceService {
   async sendSocketMessageToFrontend(message: string) {
     /** Send socket to Frontend */
     const io = this.socketService.getIo()
-    io.emit('message-progress', message)
+    io?.emit('message-progress', message)
   }
 
   async mergePdf(length: number, clientName: string, idClient: string) {
@@ -458,7 +458,7 @@ export class ServiceService {
     if (data.idFileCreatedGoogleDrive) {
       /** Send socket to Frontend */
       const io = this.socketService.getIo()
-      io.emit('update-os-orcamento', 'updateFileStatus')
+      io?.emit('update-os-orcamento', 'updateFileStatus')
       const resultClient = await this.clientsService.findOne(data.clientId)
 
       if (data.typeDocument === 'ORCAMENTO') {
@@ -493,7 +493,7 @@ export class ServiceService {
 
       /** Send socket to Frontend */
       const io = this.socketService.getIo()
-      io.emit('update-os-orcamento', 'updateFileStatus')
+      io?.emit('update-os-orcamento', 'updateFileStatus')
     }
   }
 
@@ -1199,7 +1199,7 @@ export class ServiceService {
 
         /** Send socket to Frontend */
         const io = this.socketService.getIo()
-        io.emit('update-os-orcamento', 'updateFileStatus')
+        io?.emit('update-os-orcamento', 'updateFileStatus')
       }, 30000)
     } catch (error) {
       this.logger.log(`[Sistema] - Houve um erro: ${error}`)
@@ -1294,7 +1294,7 @@ export class ServiceService {
 
       /** Send socket to Frontend */
       const io = this.socketService.getIo()
-      io.emit('update-os-orcamento', 'updateFileStatus')
+      io?.emit('update-os-orcamento', 'updateFileStatus')
       return {
         status: HttpStatus.CREATED,
       }
@@ -1310,7 +1310,7 @@ export class ServiceService {
 
       /** Send socket to Frontend */
       const io = this.socketService.getIo()
-      io.emit('update-os-orcamento', 'updateFileStatus')
+      io?.emit('update-os-orcamento', 'updateFileStatus')
       await this.deleteFile(filename, isMerge)
       throw new HttpException(
         {

@@ -30,7 +30,7 @@ export class UsersController {
 
   @Post('create')
   create(@Body() createUserDto: CreateUserDto, @Headers('user') user: string) {
-    // this.eventEmitter.emit('order.created', createUserDto)
+    // this.eventEmitter?.emit('order.created', createUserDto)
     return this.usersService.create(createUserDto, user)
   }
 

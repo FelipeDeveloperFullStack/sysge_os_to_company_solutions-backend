@@ -11,6 +11,7 @@ import {promisify} from 'util'
 import axios from 'axios'
 import * as fs from 'fs'
 import {isDevelopmentEnvironment} from './Common/Functions'
+import {SocketIOAdapter} from './Socket/socket.io.adapter'
 
 const writeFileAsync = promisify(fs.writeFile)
 
@@ -53,35 +54,9 @@ async function bootstrap() {
   const logger = new Logger()
   const app = await NestFactory.create(AppModule)
   let publicIP = ''
-  if (!isDevelopmentEnvironment()) {
-    publicIP = await getPublicIP(logger)
-    if (publicIP) {
-      const ipData = {ip: publicIP}
-      await writeFileAsync('ip.json', JSON.stringify(ipData))
-      logger.debug(`Public IP address: ${publicIP}`)
-      // setInterval(() => {
-      //   io.emit('ip-address', ipData)
-      //   /** Send to front end IP address updated */
-      // }, 1000)
-    } else {
-      logger.error(
-        'Could not be able to get public ip address. Please restart the server.',
-      )
-    }
-  } else {
-    publicIP = await getLocalIP(logger)
-    if (publicIP) {
-      const ipData = {ip: publicIP}
-      await writeFileAsync('ip.json', JSON.stringify(ipData))
-      // setInterval(() => {
-      //   io.emit('ip-address', ipData)
-      //   /** Send to front end IP address updated */
-      // }, 1000)
-      logger.debug(`Local environmnet development IP address: ${publicIP}`)
-    }
-  }
-
-  publicIP = await getPublicIP(logger)
+  publicIP = !isDevelopmentEnvironment()
+    ? await getPublicIP(logger)
+    : await getLocalIP(logger)
   const io = new Server(app.getHttpServer(), {
     cors: {
       origin: [
@@ -96,6 +71,49 @@ async function bootstrap() {
   })
   const socketService = app.get(SocketService)
   socketService.setIo(io)
+  if (!isDevelopmentEnvironment()) {
+    publicIP = await getPublicIP(logger)
+    if (publicIP) {
+      const ipData = {ip: publicIP}
+      await writeFileAsync('ip.json', JSON.stringify(ipData))
+      logger.debug(`Public IP address: ${publicIP}`)
+      // setInterval(() => {
+      //   io?.emit('ip-address', ipData)
+      //   /** Send to front end IP address updated */
+      // }, 1000)
+    } else {
+      logger.error(
+        'Could not be able to get public ip address. Please restart the server.',
+      )
+    }
+  } else {
+    publicIP = await getLocalIP(logger)
+    if (publicIP) {
+      const ipData = {ip: publicIP}
+      await writeFileAsync('ip.json', JSON.stringify(ipData))
+      // setInterval(() => {
+      //   io?.emit('ip-address', ipData)
+      //   /** Send to front end IP address updated */
+      // }, 1000)
+      logger.debug(`Local environmnet development IP address: ${publicIP}`)
+    }
+  }
+
+  // publicIP = await getPublicIP(logger)
+  // const io = new Server(app.getHttpServer(), {
+  //   cors: {
+  //     origin: [
+  //       'http://localhost:3000',
+  //       'https://solution-os.vercel.app',
+  //       publicIP ? `http://${publicIP}:3000` : undefined,
+  //       publicIP ? `http://${publicIP}:8080` : undefined,
+  //     ], // Adicione a origem do seu frontend aqui
+  //     methods: ['*'], // Adicione os métodos permitidos
+  //     allowedHeaders: ['Content-Type'], // Adicione os cabeçalhos permitidos
+  //   },
+  // })
+  // const socketService = app.get(SocketService)
+  // socketService.setIo(io)
 
   app.enableCors()
   app.useGlobalPipes(new ValidationPipe({whitelist: true, transform: true}))

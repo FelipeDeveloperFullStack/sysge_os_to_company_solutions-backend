@@ -17,7 +17,7 @@ export class WhatsappStatusService {
   onStatus(data: any) {
     console.log(data)
     if (data?.status === CONNECTED || data?.status === INCHAT) {
-      this.eventGateway.socket.emit(
+      this.eventGateway.socket?.emit(
         `connectionService.getConnection.client.ready-${data?.session}`,
         {
           status: 'ready',
@@ -34,7 +34,7 @@ export class WhatsappStatusService {
       data?.status === AUTO_CLOSE_CALLED ||
       data?.status === NOTLOGGED
     ) {
-      this.eventGateway.socket.emit(
+      this.eventGateway.socket?.emit(
         `connectionService.getConnection.client.ready-${data?.session}`,
         {
           status: 'desconnected',
@@ -44,7 +44,7 @@ export class WhatsappStatusService {
     }
 
     if (data?.status === AUTO_CLOSE_CALLED) {
-      this.eventGateway.socket.emit(
+      this.eventGateway.socket?.emit(
         `connectionService.getConnection.client.autoCloseCalled-${data?.session}`,
         {
           status: 'autoCloseCalled',

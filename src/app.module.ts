@@ -20,6 +20,7 @@ import {MulterModule} from '@nestjs/platform-express'
 import {ExtractNubankModule} from './Modules/NubankManager/nubank.module'
 import {ChartModule} from './Modules/Chart/chart.module'
 import {ConfigurationSystemModule} from './Modules/Configurations/configurations.module'
+import {SocketService} from './Socket/socket.service'
 
 @Module({
   imports: [
@@ -63,7 +64,7 @@ import {ConfigurationSystemModule} from './Modules/Configurations/configurations
     ConfigurationSystemModule,
   ],
   controllers: [],
-  providers: [ScheduleBoletoService],
+  providers: [ScheduleBoletoService, SocketService],
 })
 export class AppModule implements OnApplicationBootstrap {
   constructor(private readonly scheduleService: ScheduleBoletoService) {}

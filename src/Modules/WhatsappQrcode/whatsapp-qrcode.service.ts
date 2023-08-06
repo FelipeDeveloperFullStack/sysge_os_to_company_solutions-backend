@@ -8,7 +8,7 @@ export class WhatsappQrcodeService {
 
   @OnEvent(QRCODE)
   onQrCode(data: any) {
-    this.eventGateway.socket.emit(
+    this.eventGateway.socket?.emit(
       `connectionService.getConnection.client.qr-${data?.session}`,
       {
         qrCode: data?.qrcode,
