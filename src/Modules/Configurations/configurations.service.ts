@@ -24,6 +24,7 @@ export class ConfigurationSystemService {
   ) {}
 
   async webhook(response: any) {
+    console.log({eventWebHook: response?.event})
     if (response?.event === QRCODE_UPDATED) {
       const data = {
         event: response.event,
