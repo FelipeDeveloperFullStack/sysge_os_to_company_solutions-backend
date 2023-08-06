@@ -8,6 +8,7 @@ import {
 } from './entities/configurations.entity'
 import {ExpensesModule} from '../Expense/expenses.module'
 import {OrderServicesModule} from '../OrderService/services.module'
+import {SocketService} from 'src/Socket/socket.service'
 
 @Module({
   imports: [
@@ -18,7 +19,7 @@ import {OrderServicesModule} from '../OrderService/services.module'
     forwardRef(() => OrderServicesModule),
   ],
   controllers: [ConfigurationSystemController],
-  providers: [ConfigurationSystemService],
+  providers: [ConfigurationSystemService, SocketService],
   exports: [ConfigurationSystemService],
 })
 export class ConfigurationSystemModule {}

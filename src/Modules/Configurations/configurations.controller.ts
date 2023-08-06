@@ -20,6 +20,11 @@ export class ConfigurationSystemController {
     return this.confiService.findAll()
   }
 
+  @Get('connect/whatsapp')
+  connectWhatsapp() {
+    return this.confiService.connectWhatsapp()
+  }
+
   @Put('update')
   createOrUpdate(@Body() configurationSystemDto: ConfigurationSystemDto) {
     return this.confiService.createOrUpdate(configurationSystemDto)

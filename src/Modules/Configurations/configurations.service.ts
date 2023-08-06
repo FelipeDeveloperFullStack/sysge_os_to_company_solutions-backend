@@ -8,6 +8,10 @@ import {
 } from './entities/configurations.entity'
 import {ExpenseService} from '../Expense/expenses.service'
 import {ServiceService} from '../OrderService/services.service'
+import {SocketService} from 'src/Socket/socket.service'
+import {CONNECTION_UPDATE, QRCODE_UPDATED} from 'src/Contants'
+import axios from 'axios'
+import * as fs from 'fs'
 
 @Injectable()
 export class ConfigurationSystemService {
@@ -16,21 +20,26 @@ export class ConfigurationSystemService {
   constructor(
     @InjectModel(ConfigurationSystem.name)
     private configurationSystemModel: Model<ConfigurationSystemDocument>,
+    private readonly socketService: SocketService,
   ) {}
 
   async webhook(response: any) {
-    if (response?.event === 'qrcode.updated') {
-      console.log({
+    if (response?.event === QRCODE_UPDATED) {
+      const data = {
         event: response.event,
         base64: response?.data?.qrcode?.base64,
-      })
+      }
+      const io = this.socketService.getIo()
+      io.emit(QRCODE_UPDATED, data)
     }
-    if (response?.event === 'connection.update') {
-      console.log({
+    if (response?.event === CONNECTION_UPDATE) {
+      const data = {
         event: response.event,
         state: response?.data?.state,
         stateReason: response?.data?.statusReason,
-      })
+      }
+      const io = this.socketService.getIo()
+      io.emit(CONNECTION_UPDATE, data)
     }
   }
 
@@ -92,6 +101,61 @@ export class ConfigurationSystemService {
 
   async findAll() {
     return await this.configurationSystemModel.find()
+  }
+
+  async readIPFromFile() {
+    try {
+      const data = fs.readFileSync('ip.json', 'utf-8')
+      const ipData = JSON.parse(data)
+      return ipData?.ip
+    } catch (error) {
+      this.logger.error(error)
+    }
+  }
+
+  async createInstance(ip: string, instanceName: string) {
+    try {
+      const {data} = await axios.post(
+        `http://${ip}:8083/instance/create`,
+        {
+          instanceName,
+        },
+        {
+          headers: {
+            apiKey: process.env.API_KEY_WHATSAPP,
+          },
+        },
+      )
+      return data?.hash?.jwt
+    } catch (error) {
+      throw error
+    }
+  }
+  async getQrCode(ip: string, instanceName: string, jwt: string) {
+    try {
+      const {data} = await axios.get(
+        `http://${ip}:8083/instance/connect/${instanceName}`,
+        {
+          headers: {
+            Authorization: `Bearer ${jwt}`,
+          },
+        },
+      )
+    } catch (error) {
+      throw error
+    }
+  }
+
+  async connectWhatsapp() {
+    let ip = undefined
+    const instanceName = 'solutions'
+    if (fs.existsSync('ip.json')) {
+      ip = await this.readIPFromFile()
+    }
+    if (ip) {
+      const jwt = await this.createInstance(ip, instanceName)
+      await this.getQrCode(ip, instanceName, jwt)
+    }
   }
 
   async findOne(id: string) {
