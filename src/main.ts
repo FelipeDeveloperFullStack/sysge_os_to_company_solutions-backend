@@ -53,20 +53,6 @@ async function bootstrap() {
   const logger = new Logger()
   const app = await NestFactory.create(AppModule)
   let publicIP = ''
-  const io = new Server(app.getHttpServer(), {
-    cors: {
-      origin: [
-        'http://localhost:3000',
-        'https://solution-os.vercel.app',
-        publicIP ? `http://${publicIP}:3000` : undefined,
-        publicIP ? `http://${publicIP}:8080` : undefined,
-      ], // Adicione a origem do seu frontend aqui
-      methods: ['*'], // Adicione os métodos permitidos
-      allowedHeaders: ['Content-Type'], // Adicione os cabeçalhos permitidos
-    },
-  })
-  const socketService = app.get(SocketService)
-  socketService.setIo(io)
   if (!isDevelopmentEnvironment()) {
     publicIP = await getPublicIP(logger)
     if (publicIP) {
@@ -94,6 +80,22 @@ async function bootstrap() {
       logger.debug(`Local environmnet development IP address: ${publicIP}`)
     }
   }
+
+  publicIP = await getPublicIP(logger)
+  const io = new Server(app.getHttpServer(), {
+    cors: {
+      origin: [
+        'http://localhost:3000',
+        'https://solution-os.vercel.app',
+        publicIP ? `http://${publicIP}:3000` : undefined,
+        publicIP ? `http://${publicIP}:8080` : undefined,
+      ], // Adicione a origem do seu frontend aqui
+      methods: ['*'], // Adicione os métodos permitidos
+      allowedHeaders: ['Content-Type'], // Adicione os cabeçalhos permitidos
+    },
+  })
+  const socketService = app.get(SocketService)
+  socketService.setIo(io)
 
   app.enableCors()
   app.useGlobalPipes(new ValidationPipe({whitelist: true, transform: true}))
