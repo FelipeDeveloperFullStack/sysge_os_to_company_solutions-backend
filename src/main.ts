@@ -1,17 +1,16 @@
 import {Logger, ValidationPipe} from '@nestjs/common'
 import {NestFactory} from '@nestjs/core'
-import {AppModule} from './app.module'
 import {json} from 'body-parser'
-import {Server} from 'socket.io'
 import * as os from 'os'
+import {Server} from 'socket.io'
+import {AppModule} from './app.module'
 // import {SocketIOAdapter} from './Socket/socket.io.adapter'
 // import * as cors from 'cors'
-import {SocketService} from './Socket/socket.service'
-import {promisify} from 'util'
 import axios from 'axios'
 import * as fs from 'fs'
+import {promisify} from 'util'
 import {isDevelopmentEnvironment} from './Common/Functions'
-import {SocketIOAdapter} from './Socket/socket.io.adapter'
+import {SocketService} from './Socket/socket.service'
 
 const writeFileAsync = promisify(fs.writeFile)
 
@@ -59,14 +58,15 @@ async function bootstrap() {
     : await getLocalIP(logger)
   const io = new Server(app.getHttpServer(), {
     cors: {
+      //origin: ['*'], // Adicione a origem do seu frontend aqui
       origin: [
         'http://localhost:3000',
-        'https://solution-os.vercel.app',
         publicIP ? `http://${publicIP}:3000` : undefined,
         publicIP ? `http://${publicIP}:8080` : undefined,
+        'https://solution-os.vercel.app',
       ], // Adicione a origem do seu frontend aqui
       methods: ['*'], // Adicione os métodos permitidos
-      allowedHeaders: ['Content-Type'], // Adicione os cabeçalhos permitidos
+      allowedHeaders: ['*'], // Adicione os cabeçalhos permitidos
     },
   })
   const socketService = app.get(SocketService)

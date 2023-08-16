@@ -36,4 +36,5 @@ lerna-debug.log*
 !.vscode/launch.json
 !.vscode/extensions.json
 ip.json
+token_whatsapp.json
 token_gmail.json

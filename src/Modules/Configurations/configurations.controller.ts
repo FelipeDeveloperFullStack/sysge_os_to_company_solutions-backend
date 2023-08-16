@@ -1,13 +1,4 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Post,
-  Put,
-  Query,
-} from '@nestjs/common'
+import {Body, Controller, Get, Post, Put} from '@nestjs/common'
 import {ConfigurationSystemService} from './configurations.service'
 import {ConfigurationSystemDto} from './dto/configurations.dto'
 
@@ -18,6 +9,11 @@ export class ConfigurationSystemController {
   @Get()
   findAll() {
     return this.confiService.findAll()
+  }
+
+  @Get('status/connection')
+  getStatusConnection() {
+    return this.confiService.getStatusConnection()
   }
 
   @Get('connect/whatsapp')

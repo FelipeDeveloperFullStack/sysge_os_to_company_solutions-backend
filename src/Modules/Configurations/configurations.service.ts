@@ -1,21 +1,21 @@
 import {HttpException, HttpStatus, Injectable, Logger} from '@nestjs/common'
 import {InjectModel} from '@nestjs/mongoose'
+import axios from 'axios'
+import * as fs from 'fs'
 import {Model} from 'mongoose'
+import {CONNECTION_UPDATE, QRCODE_UPDATED} from 'src/Contants'
+import {SocketService} from 'src/Socket/socket.service'
+import {promisify} from 'util'
 import {ConfigurationSystemDto} from './dto/configurations.dto'
 import {
   ConfigurationSystem,
   ConfigurationSystemDocument,
 } from './entities/configurations.entity'
-import {ExpenseService} from '../Expense/expenses.service'
-import {ServiceService} from '../OrderService/services.service'
-import {SocketService} from 'src/Socket/socket.service'
-import {CONNECTION_UPDATE, QRCODE_UPDATED} from 'src/Contants'
-import axios from 'axios'
-import * as fs from 'fs'
 
 @Injectable()
 export class ConfigurationSystemService {
   private logger = new Logger()
+  private writeFileAsync = promisify(fs.writeFile)
 
   constructor(
     @InjectModel(ConfigurationSystem.name)
@@ -24,7 +24,6 @@ export class ConfigurationSystemService {
   ) {}
 
   async webhook(response: any) {
-    console.log({eventWebHook: response?.event})
     if (response?.event === QRCODE_UPDATED) {
       const data = {
         event: response.event,
@@ -113,6 +112,15 @@ export class ConfigurationSystemService {
       this.logger.error(error)
     }
   }
+  async readTokenFromFile() {
+    try {
+      const data = fs.readFileSync('token_whatsapp.json', 'utf-8')
+      const tokenData = JSON.parse(data)
+      return tokenData
+    } catch (error) {
+      this.logger.error(error)
+    }
+  }
 
   async createInstance(ip: string, instanceName: string) {
     try {
@@ -132,6 +140,23 @@ export class ConfigurationSystemService {
       throw error
     }
   }
+
+  async getConnectionStatus(ip: string, instanceName: string, jwt: string) {
+    try {
+      const {data} = await axios.get(
+        `http://${ip}:8083/instance/connectionState/${instanceName}`,
+        {
+          headers: {
+            Authorization: `Bearer ${jwt}`,
+          },
+        },
+      )
+      return data
+    } catch (error) {
+      throw error
+    }
+  }
+
   async getQrCode(ip: string, instanceName: string, jwt: string) {
     try {
       await axios.get(`http://${ip}:8083/instance/connect/${instanceName}`, {
@@ -162,6 +187,32 @@ export class ConfigurationSystemService {
   //   }
   // }
 
+  async getStatusConnection() {
+    let token = undefined
+    let ip = undefined
+    if (fs.existsSync('token_whatsapp.json')) {
+      token = await this.readTokenFromFile()
+    }
+    if (fs.existsSync('ip.json')) {
+      ip = await this.readIPFromFile()
+    }
+    if (ip) {
+      ip = '192.168.1.35'
+      let instanceName = token?.instanceName
+      let jwt = token?.jwt
+      try {
+        return await this.getConnectionStatus(ip, instanceName, jwt)
+      } catch (error) {
+        throw new HttpException(
+          {
+            message: error,
+          },
+          HttpStatus.EXPECTATION_FAILED,
+        )
+      }
+    }
+  }
+
   async connectWhatsapp() {
     let ip = undefined
     const instanceName = String(Math.random())
@@ -169,9 +220,23 @@ export class ConfigurationSystemService {
       ip = await this.readIPFromFile()
     }
     if (ip) {
-      const jwt = await this.createInstance(ip, instanceName)
-      // await this.setInstance(instanceName, ip, jwt)
-      await this.getQrCode(ip, instanceName, jwt)
+      try {
+        ip = '192.168.1.35'
+        const jwt = await this.createInstance(ip, instanceName)
+        // await this.setInstance(instanceName, ip, jwt)
+        await this.writeFileAsync(
+          'token_whatsapp.json',
+          JSON.stringify({jwt, instanceName}),
+        )
+        await this.getQrCode(ip, instanceName, jwt)
+      } catch (error) {
+        throw new HttpException(
+          {
+            message: error,
+          },
+          HttpStatus.EXPECTATION_FAILED,
+        )
+      }
     }
   }
 
