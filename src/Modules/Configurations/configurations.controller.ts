@@ -1,4 +1,4 @@
-import {Body, Controller, Get, Post, Put} from '@nestjs/common'
+import {Body, Controller, Get, Post, Put, Query} from '@nestjs/common'
 import {ConfigurationSystemService} from './configurations.service'
 import {ConfigurationSystemDto} from './dto/configurations.dto'
 
@@ -9,6 +9,11 @@ export class ConfigurationSystemController {
   @Get()
   findAll() {
     return this.confiService.findAll()
+  }
+
+  @Get('send')
+  sendMidia(@Query() phoneNumber: string, osNumber: string) {
+    return this.confiService.sendMidia(phoneNumber, osNumber)
   }
 
   @Get('status/connection')

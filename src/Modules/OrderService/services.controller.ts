@@ -3,24 +3,17 @@ import {
   Controller,
   Delete,
   Get,
+  Headers,
+  HttpCode,
   Param,
   Post,
   Put,
   Query,
-} from '@nestjs/common'
-import {
-  Headers,
-  HttpCode,
-  UploadedFile,
   UploadedFiles,
   UseInterceptors,
 } from '@nestjs/common'
 import {HttpStatus} from '@nestjs/common/enums'
-import {
-  FileFieldsInterceptor,
-  FileInterceptor,
-  FilesInterceptor,
-} from '@nestjs/platform-express'
+import {FileFieldsInterceptor} from '@nestjs/platform-express'
 import {DocumentChangeStatusDto} from './dto/documentChangeStatus.dto'
 import {ServiceDto} from './dto/service.dto'
 import {ServiceFilterDto} from './dto/service.filter.dto'
@@ -81,13 +74,18 @@ export class ServiceController {
     return this.serviceService.getTotalBoletoNotImported()
   }
 
-  @Post('upload/boleto/:osNumber')
+  @Post('upload/boleto/:osNumber/:phoneNumber')
   @UseInterceptors(FileFieldsInterceptor([{name: 'file[]', maxCount: 10}]))
   async uploadBoleto(
     @UploadedFiles() files: Express.Multer.File[],
     @Param('osNumber') osNumber: string,
+    @Param('phoneNumber') phoneNumber: string,
   ) {
-    return this.serviceService.uploadBoleto(files['file[]'], osNumber)
+    return this.serviceService.uploadBoleto(
+      files['file[]'],
+      osNumber,
+      phoneNumber,
+    )
   }
 
   @Get('total/incomes')

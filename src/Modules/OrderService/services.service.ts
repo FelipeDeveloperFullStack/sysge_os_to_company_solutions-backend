@@ -1,37 +1,36 @@
 import {HttpException, HttpStatus, Injectable, Logger} from '@nestjs/common'
 import {InjectModel} from '@nestjs/mongoose'
-import {Model} from 'mongoose'
-import {ServiceDto} from './dto/service.dto'
-import {ServiceFilterDto} from './dto/service.filter.dto'
-import {OrderService, ServiceDocument} from './entities/service.entity'
+import {addDays, format, isWithinInterval, parse} from 'date-fns'
 import * as fs from 'fs'
+import {Model} from 'mongoose'
+import * as os from 'os'
 import * as path from 'path'
-import {addDays, format, isBefore, isWithinInterval, parse} from 'date-fns'
+import {isDevelopmentEnvironment} from 'src/Common/Functions'
+import {removeAccents} from 'src/Common/Helpers/fileNameToDelete'
 import {formatInputPrice} from 'src/Common/Helpers/formatPrice'
-import {
-  createFolder,
-  listFolder,
-  about,
-  list,
-  uploadFile,
-  destroy,
-} from './googleDrive/gdrive'
-import {ServiceUpdateFileStatusDto} from './dto/service.updateFileStatus.dto'
-import {Server, Socket} from 'socket.io'
 import {SocketService} from 'src/Socket/socket.service'
 import {ClientsService} from '../Clients/clients.service'
+import {ConfigurationSystemService} from '../Configurations/configurations.service'
 import {DocumentChangeStatusDto} from './dto/documentChangeStatus.dto'
+import {ServiceDto} from './dto/service.dto'
+import {ServiceFilterDto} from './dto/service.filter.dto'
+import {ServicePartialPaymentDto} from './dto/service.partial.payment.dto'
+import {ServiceUpdateFileStatusDto} from './dto/service.updateFileStatus.dto'
+import {OrderService, ServiceDocument} from './entities/service.entity'
+import {
+  createFolder,
+  destroy,
+  list,
+  listFolder,
+  uploadFile,
+} from './googleDrive/gdrive'
 import {moveFileGoogleDrive} from './googleDrive/moveFileFolderClient'
-import {isDevelopmentEnvironment} from 'src/Common/Functions'
-import * as os from 'os'
 import {
   countAndDeletePDFs,
   deleteAllFilesInFolder,
   deleteMergedPDFs,
   mergePDFsInFolder,
 } from './mergePdf'
-import {removeAccents} from 'src/Common/Helpers/fileNameToDelete'
-import {ServicePartialPaymentDto} from './dto/service.partial.payment.dto'
 
 @Injectable()
 export class ServiceService {
@@ -42,6 +41,7 @@ export class ServiceService {
     private serviceModel: Model<ServiceDocument>,
     private readonly socketService: SocketService,
     private readonly clientsService: ClientsService,
+    private readonly configurationSystemService: ConfigurationSystemService,
   ) {}
 
   async create(createServiceDto: ServiceDto, user: string) {
@@ -197,7 +197,11 @@ export class ServiceService {
     }
   }
 
-  async uploadBoleto(files: Express.Multer.File[], osNumber: string) {
+  async uploadBoleto(
+    files: Express.Multer.File[],
+    osNumber: string,
+    phoneNumber: string,
+  ) {
     if (!files.length) {
       throw new HttpException(
         {
@@ -230,6 +234,23 @@ export class ServiceService {
         )
         await this.updateBoletoUploaded(osNumber, true)
       })
+
+      setTimeout(async () => {
+        try {
+          this.logger.debug(
+            `[Sistema] - Enviando notificação de cobranca no Whatsapp ${phoneNumber} referente a OS ${osNumber}...`,
+          )
+          await this.configurationSystemService.sendMidia(phoneNumber, osNumber)
+          this.logger.warn(
+            `[Sistema] - Notificação de cobranca no Whatsapp enviada com sucesso.`,
+          )
+        } catch (error) {
+          this.logger.error(
+            `[Sistema] - Houve um erro ao enviar a notificacao de cobranca no Whatsapp ${phoneNumber} referente a OS ${osNumber}.`,
+          )
+        }
+      }, 10000)
+
       return {message: 'ok'}
     } catch (error) {
       throw new HttpException(

@@ -3,6 +3,9 @@ import {InjectModel} from '@nestjs/mongoose'
 import axios from 'axios'
 import * as fs from 'fs'
 import {Model} from 'mongoose'
+import * as os from 'os'
+import * as path from 'path'
+import {getGreeting} from 'src/Common/Helpers/getGreeting'
 import {CONNECTION_UPDATE, QRCODE_UPDATED} from 'src/Contants'
 import {SocketService} from 'src/Socket/socket.service'
 import {promisify} from 'util'
@@ -11,6 +14,26 @@ import {
   ConfigurationSystem,
   ConfigurationSystemDocument,
 } from './entities/configurations.entity'
+
+type MimeType =
+  | 'text/plain'
+  | 'image/jpeg'
+  | 'application/pdf'
+  | 'audio/mp3'
+  | 'video/mp4'
+
+type FileType = {
+  base64: string
+  fileName: string
+  path: string
+  file?: Buffer
+}
+
+interface SimulatedFile {
+  path: string
+  name: string
+  type: MimeType
+}
 
 @Injectable()
 export class ConfigurationSystemService {
@@ -186,6 +209,176 @@ export class ConfigurationSystemService {
   //     throw error
   //   }
   // }
+
+  async findFileByOrderNumber(orderNumber: string): Promise<FileType[] | null> {
+    const userHomeDir = os.homedir()
+    const folderPath = path.join(userHomeDir, 'boletos')
+
+    try {
+      const files = fs.readdirSync(folderPath)
+      const matchingFiles = files.filter((fileName) => {
+        const regex = /\[OS\s+(\d+)\]/i
+        const match = fileName.match(regex)
+        return match && match[1] === orderNumber
+      })
+
+      // If no matching files are found, return null
+      if (matchingFiles.length === 0) {
+        return null
+      }
+      // Convert the file names to file paths
+      // const filePaths = matchingFiles.map((fileName) => {
+      //   return {
+      //     path: path.join(folderPath, fileName),
+      //     fileName,
+      //   }
+      // })
+      // return filePaths
+      const fileDataArray = await Promise.all(
+        matchingFiles.map(async (fileName) => {
+          const filePath = path.join(folderPath, fileName)
+          const fileData = await fs.promises.readFile(filePath)
+          const base64Data = fileData.toString('base64')
+          const simulatedFile: SimulatedFile = {
+            path: filePath,
+            name: fileName,
+            type: 'application/pdf', // Substitua pelo tipo MIME correto
+          }
+          return {
+            base64: base64Data,
+            fileName,
+            path: filePath,
+            file: fileData,
+          }
+        }),
+      )
+
+      return fileDataArray
+    } catch (err) {
+      this.logger.error('[SISTEMA] - Error accessing the folder or file:', err)
+      return null
+    }
+  }
+
+  async sendTextToWhatsapp(
+    phoneNumber: string,
+    ip: string,
+    instanceName: string,
+    jwt: string,
+    osNumber: string,
+  ) {
+    try {
+      await axios.post(
+        `http://${ip}:8083/message/sendText/${instanceName}`,
+        {
+          number: phoneNumber,
+          textMessage: {
+            text: `${getGreeting()}\n\nEstamos enviando esta notificação via Whatsapp para lembrá-lo de que o boleto referente à ordem de serviço de número *${osNumber}* foi gerado.\n\nAgradecemos sua atenção e pontualidade.\nQualquer dúvida, estamos à disposição.\nCaso o boleto já esteja pago, por favor, desconsidere este essa mensagem.\n\nAtenciosamente.`,
+          },
+          options: {
+            delay: 0,
+            presence: 'composing',
+          },
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${jwt}`,
+          },
+        },
+      )
+    } catch (error) {
+      throw new HttpException(
+        {
+          message: error,
+        },
+        HttpStatus.EXPECTATION_FAILED,
+      )
+    }
+  }
+
+  async sendAttachmentToWhatsappClientNumber(
+    phoneNumber: string,
+    instanceName: string,
+    ip: string,
+    jwt: string,
+    fileName: string,
+    base64: string,
+  ) {
+    try {
+      const base64Data = base64
+      // Decodificar a base64 para um buffer
+      const binaryData = Buffer.from(base64Data, 'base64')
+      // Criar um objeto Blob a partir do buffer
+      const blob = new Blob([binaryData], {type: 'application/pdf'})
+
+      const formData = new FormData()
+      formData.append('number', phoneNumber)
+      formData.append('caption', ' ')
+      formData.append('attachment', blob, fileName) // Replace yourMediaFile with the actual file
+      formData.append('mediatype', 'document')
+      formData.append('delay', '1500')
+
+      await axios.post(
+        `http://${ip}:8083/message/sendMediaFile/${instanceName}`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${jwt}`,
+            'Content-Type': 'multipart/form-data',
+          },
+        },
+      )
+    } catch (error) {
+      throw new HttpException(
+        {
+          message: error,
+        },
+        HttpStatus.EXPECTATION_FAILED,
+      )
+    }
+  }
+
+  async sendMidia(phoneNumber?: string, osNumber?: string) {
+    try {
+      let token = undefined
+      let ip = undefined
+      if (fs.existsSync('token_whatsapp.json')) {
+        token = await this.readTokenFromFile()
+      }
+      if (fs.existsSync('ip.json')) {
+        ip = await this.readIPFromFile()
+      }
+      ip = '192.168.1.35'
+      let instanceName = token?.instanceName
+      let jwt = token?.jwt
+      const files = await this.findFileByOrderNumber(osNumber)
+      await this.sendTextToWhatsapp(
+        phoneNumber,
+        ip,
+        instanceName,
+        jwt,
+        osNumber,
+      )
+      files.forEach(async (file) => {
+        await this.sendAttachmentToWhatsappClientNumber(
+          phoneNumber,
+          instanceName,
+          ip,
+          jwt,
+          file.fileName,
+          file.base64,
+        )
+      })
+      return 'File sended with successfully'
+    } catch (error) {
+      throw new HttpException(
+        {
+          message: error,
+        },
+        HttpStatus.EXPECTATION_FAILED,
+      )
+    }
+  }
 
   async getStatusConnection() {
     let token = undefined
