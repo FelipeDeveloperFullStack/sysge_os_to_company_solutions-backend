@@ -5,7 +5,9 @@ import * as fs from 'fs'
 import {Model} from 'mongoose'
 import * as os from 'os'
 import * as path from 'path'
+import {isDevelopmentEnvironment} from 'src/Common/Functions'
 import {getGreeting} from 'src/Common/Helpers/getGreeting'
+import {getLocalIP} from 'src/Common/Helpers/localIP'
 import {CONNECTION_UPDATE, QRCODE_UPDATED} from 'src/Contants'
 import {SocketService} from 'src/Socket/socket.service'
 import {promisify} from 'util'
@@ -345,10 +347,11 @@ export class ConfigurationSystemService {
       if (fs.existsSync('token_whatsapp.json')) {
         token = await this.readTokenFromFile()
       }
-      if (fs.existsSync('ip.json')) {
-        ip = await this.readIPFromFile()
+      if (isDevelopmentEnvironment()) {
+        ip = '192.168.1.35' // Development virtual machine
+      } else {
+        ip = getLocalIP()
       }
-      // ip = '192.168.1.35'
       let instanceName = token?.instanceName
       let jwt = token?.jwt
       const files = await this.findFileByOrderNumber(osNumber)
