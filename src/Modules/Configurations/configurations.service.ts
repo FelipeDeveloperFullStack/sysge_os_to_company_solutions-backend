@@ -348,7 +348,7 @@ export class ConfigurationSystemService {
       if (fs.existsSync('ip.json')) {
         ip = await this.readIPFromFile()
       }
-      ip = '192.168.1.35'
+      // ip = '192.168.1.35'
       let instanceName = token?.instanceName
       let jwt = token?.jwt
       const files = await this.findFileByOrderNumber(osNumber)
@@ -390,7 +390,7 @@ export class ConfigurationSystemService {
       ip = await this.readIPFromFile()
     }
     if (ip) {
-      ip = '192.168.1.35'
+      // ip = '192.168.1.35'
       let instanceName = token?.instanceName
       let jwt = token?.jwt
       try {
@@ -414,7 +414,7 @@ export class ConfigurationSystemService {
     }
     if (ip) {
       try {
-        ip = '192.168.1.35'
+        // ip = '192.168.1.35'
         const jwt = await this.createInstance(ip, instanceName)
         // await this.setInstance(instanceName, ip, jwt)
         await this.writeFileAsync(
