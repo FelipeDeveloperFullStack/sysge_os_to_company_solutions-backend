@@ -74,18 +74,14 @@ export class ServiceController {
     return this.serviceService.getTotalBoletoNotImported()
   }
 
-  @Post('upload/boleto/:osNumber/:phoneNumber')
+  @Post('upload/boleto/:osNumber/:clientId')
   @UseInterceptors(FileFieldsInterceptor([{name: 'file[]', maxCount: 10}]))
   async uploadBoleto(
     @UploadedFiles() files: Express.Multer.File[],
     @Param('osNumber') osNumber: string,
-    @Param('phoneNumber') phoneNumber: string,
+    @Param('clientId') clientId: string,
   ) {
-    return this.serviceService.uploadBoleto(
-      files['file[]'],
-      osNumber,
-      phoneNumber,
-    )
+    return this.serviceService.uploadBoleto(files['file[]'], osNumber, clientId)
   }
 
   @Get('total/incomes')

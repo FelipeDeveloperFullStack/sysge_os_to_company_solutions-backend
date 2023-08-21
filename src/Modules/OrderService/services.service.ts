@@ -6,6 +6,7 @@ import {Model} from 'mongoose'
 import * as os from 'os'
 import * as path from 'path'
 import {isDevelopmentEnvironment} from 'src/Common/Functions'
+import clearSpecialCharacters from 'src/Common/Helpers/clearSpecialCharacters'
 import {removeAccents} from 'src/Common/Helpers/fileNameToDelete'
 import {formatInputPrice} from 'src/Common/Helpers/formatPrice'
 import {SocketService} from 'src/Socket/socket.service'
@@ -200,7 +201,7 @@ export class ServiceService {
   async uploadBoleto(
     files: Express.Multer.File[],
     osNumber: string,
-    phoneNumber: string,
+    clientId: string,
   ) {
     if (!files.length) {
       throw new HttpException(
@@ -235,18 +236,30 @@ export class ServiceService {
         await this.updateBoletoUploaded(osNumber, true)
       })
 
+      const data = await this.clientsService.findOne(clientId)
+      const phoneNumber = `55${clearSpecialCharacters(data?.phoneNumber)}`
+
       setTimeout(async () => {
-        try {
-          this.logger.debug(
-            `[Sistema] - Enviando notificação de cobranca no Whatsapp ${phoneNumber} referente a OS ${osNumber}...`,
-          )
-          await this.configurationSystemService.sendMidia(phoneNumber, osNumber)
-          this.logger.warn(
-            `[Sistema] - Notificação de cobranca no Whatsapp enviada com sucesso.`,
-          )
-        } catch (error) {
+        if (phoneNumber) {
+          try {
+            this.logger.debug(
+              `[Sistema] - Enviando notificação de cobranca no Whatsapp ${phoneNumber} referente a OS ${osNumber}...`,
+            )
+            await this.configurationSystemService.sendMidia(
+              phoneNumber,
+              osNumber,
+            )
+            this.logger.warn(
+              `[Sistema] - Notificação de cobranca no Whatsapp enviada com sucesso.`,
+            )
+          } catch (error) {
+            this.logger.error(
+              `[Sistema] - Houve um erro ao enviar a notificacao de cobranca no Whatsapp ${phoneNumber} referente a OS ${osNumber}.`,
+            )
+          }
+        } else {
           this.logger.error(
-            `[Sistema] - Houve um erro ao enviar a notificacao de cobranca no Whatsapp ${phoneNumber} referente a OS ${osNumber}.`,
+            `[Sistema] - Número de whatsapp não encontrado referente a OS ${osNumber}.`,
           )
         }
       }, 10000)

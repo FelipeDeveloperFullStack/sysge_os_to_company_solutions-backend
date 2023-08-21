@@ -392,6 +392,9 @@ export class ConfigurationSystemService {
     if (fs.existsSync('ip.json')) {
       ip = await this.readIPFromFile()
     }
+    if (isDevelopmentEnvironment()) {
+      ip = '192.168.1.35' // Development virtual machine
+    }
     if (ip) {
       // ip = '192.168.1.35'
       let instanceName = token?.instanceName
@@ -414,6 +417,9 @@ export class ConfigurationSystemService {
     const instanceName = String(Math.random())
     if (fs.existsSync('ip.json')) {
       ip = await this.readIPFromFile()
+    }
+    if (isDevelopmentEnvironment()) {
+      ip = '192.168.1.35' // Development virtual machine
     }
     if (ip) {
       try {
