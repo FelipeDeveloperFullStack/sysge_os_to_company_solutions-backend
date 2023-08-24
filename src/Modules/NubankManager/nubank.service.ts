@@ -5,24 +5,25 @@ import {
   Logger,
   OnModuleInit,
 } from '@nestjs/common'
-import * as cron from 'node-cron'
 import {InjectModel} from '@nestjs/mongoose'
+import {subDays} from 'date-fns'
+import * as fs from 'fs'
+import {Auth, google} from 'googleapis'
 import {Model} from 'mongoose'
+import * as cron from 'node-cron'
+import * as path from 'path'
+import * as readline from 'readline'
+import {readEmailsWithAttachments} from 'src/Automations/Nubank'
+import {
+  default as readCSVFile,
+  default as readCSVFiles,
+} from 'src/Automations/Nubank/functions/ReactFileCSV'
+import {isDevelopmentEnvironment} from 'src/Common/Functions'
+import {formatPrice} from 'src/Common/Helpers/formatPrice'
+import {ExpenseService} from '../Expense/expenses.service'
 import {ExtractNubankDto} from './dto/nubank.dto'
 import {ExtractNubankFilterDto} from './dto/nubank.filter.dto'
 import {ExtractNubank, ExtractNubankDocument} from './entities/nubank.entity'
-import * as fs from 'fs'
-import * as readline from 'readline'
-import {google, Auth} from 'googleapis'
-import * as path from 'path'
-import {format, subDays} from 'date-fns'
-import readCSVFile from 'src/Automations/Nubank/functions/ReactFileCSV'
-import {readEmailsWithAttachments} from 'src/Automations/Nubank'
-import {setTimeout} from 'timers/promises'
-import {isDevelopmentEnvironment} from 'src/Common/Functions'
-import readCSVFiles from 'src/Automations/Nubank/functions/ReactFileCSV'
-import {ExpenseService} from '../Expense/expenses.service'
-import {formatInputPrice, formatPrice} from 'src/Common/Helpers/formatPrice'
 
 @Injectable()
 export class ExtractNubankService implements OnModuleInit {
@@ -65,9 +66,9 @@ export class ExtractNubankService implements OnModuleInit {
    * Todos os dias as 5 horas da manha.
    */
   async onModuleInit() {
-    //  A cada minuto: '*/1 * * * *'
+    //  A cada minuto: '*/5 * * * *'
     //  Todos os dias as 5:00hrs da manha: '0 5 * * *'
-    cron.schedule('0 5 * * *', async () => {
+    cron.schedule('*/5 * * * *', async () => {
       if (!isDevelopmentEnvironment()) {
         try {
           this.logger.debug(
