@@ -60,56 +60,74 @@ export class ExtractNubankService implements OnModuleInit {
     }
   }
 
+  async extractDataNubankEmail() {
+    //  A cada minuto: '*/5 * * * *'
+    //  Todos os dias as 5:00hrs da manha: '0 5 * * *'
+    if (!isDevelopmentEnvironment()) {
+      try {
+        this.logger.debug(
+          '[SISTEMA] - Iniciando a extracao do extrado do nubank...',
+        )
+        await readEmailsWithAttachments()
+        const dataReadable = await readCSVFiles()
+        dataReadable?.forEach(async (extract) => {
+          const hasExtract = await this.expense.findOneIdNubank(
+            String(extract.Identificador).trim(),
+          )
+          if (!hasExtract) {
+            // this.create({
+            //   dateIn: extract.Data,
+            //   description: extract['Descrição'],
+            //   id: extract.Identificador,
+            //   value: String(extract.Valor),
+            // })
+            const formated = formatPrice(extract.Valor * -1)
+            this.expense.create(
+              {
+                dateIn: extract.Data,
+                expense: extract['Descrição'],
+                maturity: '',
+                status: 'PAGO',
+                value: formated,
+                user: 'NUBANK',
+                idNubank: extract.Identificador,
+              },
+              'NUBANK',
+            )
+          }
+        })
+        if (dataReadable?.length) {
+          await this.deleteCSVFile()
+          this.logger.debug('[SISTEMA] - Procedimento finalizado.')
+        }
+      } catch (err) {
+        this.logger.error(err)
+      }
+    }
+  }
+
   /**
    * @description
    * Extrai os emails dos ultimos 7 dias com contem anexo .csv
    * Todos os dias as 5 horas da manha.
    */
   async onModuleInit() {
-    //  A cada minuto: '*/5 * * * *'
-    //  Todos os dias as 5:00hrs da manha: '0 5 * * *'
-    cron.schedule('0 5 * * *', async () => {
-      if (!isDevelopmentEnvironment()) {
-        try {
-          this.logger.debug(
-            '[SISTEMA] - Iniciando a extracao do extrado do nubank...',
-          )
-          await readEmailsWithAttachments()
-          const dataReadable = await readCSVFiles()
-          dataReadable?.forEach(async (extract) => {
-            const hasExtract = await this.expense.findOneIdNubank(
-              String(extract.Identificador).trim(),
-            )
-            if (!hasExtract) {
-              // this.create({
-              //   dateIn: extract.Data,
-              //   description: extract['Descrição'],
-              //   id: extract.Identificador,
-              //   value: String(extract.Valor),
-              // })
-              const formated = formatPrice(extract.Valor * -1)
-              this.expense.create(
-                {
-                  dateIn: extract.Data,
-                  expense: extract['Descrição'],
-                  maturity: '',
-                  status: 'PAGO',
-                  value: formated,
-                  user: 'NUBANK',
-                  idNubank: extract.Identificador,
-                },
-                'NUBANK',
-              )
-            }
-          })
-          if (dataReadable?.length) {
-            await this.deleteCSVFile()
-            this.logger.debug('[SISTEMA] - Procedimento finalizado.')
-          }
-        } catch (err) {
-          this.logger.error(err)
-        }
-      }
+    const fiveHourInTheMorning = '0 5 * * *'
+    const halfAnHour = '0 12 * * *'
+    const sixHour = '0 18 * * *'
+    const tenHour = '0 22 * * *'
+
+    cron.schedule(fiveHourInTheMorning, async () => {
+      await this.extractDataNubankEmail()
+    })
+    cron.schedule(halfAnHour, async () => {
+      await this.extractDataNubankEmail()
+    })
+    cron.schedule(sixHour, async () => {
+      await this.extractDataNubankEmail()
+    })
+    cron.schedule(tenHour, async () => {
+      await this.extractDataNubankEmail()
     })
   }
 
