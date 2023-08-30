@@ -1,16 +1,17 @@
 import {Injectable, Logger} from '@nestjs/common'
+import {addDays, format, isWithinInterval, parse} from 'date-fns'
+import * as fs from 'fs'
+import * as handlebars from 'handlebars'
+import {DateTime} from 'luxon'
 import * as cron from 'node-cron'
 import * as nodemailer from 'nodemailer'
-import * as handlebars from 'handlebars'
-import * as fs from 'fs'
-import * as path from 'path'
 import * as base64ToS3 from 'nodemailer-base64-to-s3'
-import {isDevelopmentEnvironment} from 'src/Common/Functions'
-import {ServiceService} from 'src/Modules/OrderService/services.service'
-import {addDays, isWithinInterval, parse, isEqual, format} from 'date-fns'
-import {DateTime} from 'luxon'
-import {ClientsService} from 'src/Modules/Clients/clients.service'
 import * as os from 'os'
+import * as path from 'path'
+import {isDevelopmentEnvironment} from 'src/Common/Functions'
+import {ClientsService} from 'src/Modules/Clients/clients.service'
+import {ConfigurationSystemService} from 'src/Modules/Configurations/configurations.service'
+import {ServiceService} from 'src/Modules/OrderService/services.service'
 
 type FileType = {
   path: string
@@ -26,6 +27,7 @@ export class ScheduleBoletoService {
   constructor(
     private readonly orderService: ServiceService,
     private readonly clientService: ClientsService,
+    private readonly configurationSystemService: ConfigurationSystemService,
   ) {
     const templatePath = path.resolve(
       'dist',
@@ -92,6 +94,7 @@ export class ScheduleBoletoService {
     clientName: string,
     pdfAttachment: FileType[],
     osNumber: string,
+    total: string,
   ) {
     const gifPath = path.resolve(
       'dist',
@@ -109,7 +112,7 @@ export class ScheduleBoletoService {
       gif: `data:image/gif;base64,${gifData}`,
     }
     const html = this.emailTemplate(data)
-    setTimeout(() => {
+    setTimeout(async () => {
       this.sendEmail(
         email,
         'Lembrete Importante: Vencimento do Boleto',
@@ -128,6 +131,13 @@ export class ScheduleBoletoService {
         `Enviando e-mail de cobrança para o cliente: ${clientName} - ${
           isCurrentDay ? 'Vencimento hoje' : 'Vencimento daqui 3 dias'
         }`,
+      )
+      const message = `📨 Email de notificação de cobrança enviado 📨 \n*Cliente:* ${clientName} \n*OS Nº:* ${osNumber} \n*Tipo de Vencimento:* ${
+        isCurrentDay ? 'Vencimento hoje' : 'Vencimento daqui 3 dias'
+      } \n*Valor:* ${total}`
+      await this.configurationSystemService.sendMessageGroup(
+        '120363169904240571@g.us',
+        message,
       )
     }, 5000)
   }
@@ -171,6 +181,7 @@ export class ScheduleBoletoService {
     name: string,
     clientId: string,
     osNumber: string,
+    total: string,
   ) {
     const pdfAttachment = await this.findFileByOrderNumber(osNumber)
     if (pdfAttachment) {
@@ -183,6 +194,7 @@ export class ScheduleBoletoService {
           name,
           pdfAttachment,
           osNumber,
+          total,
         )
       } else {
         await this.clientService.updateRegisterNotification(clientId, true)
@@ -206,6 +218,7 @@ export class ScheduleBoletoService {
       const osId = orderServiceItem?.id
       const name = orderServiceItem?.client?.name
       const osNumber = orderServiceItem?.osNumber
+      const total = orderServiceItem?.total
 
       const maturityDate = parse(
         orderServiceItem.maturityOfTheBoleto || '',
@@ -221,7 +234,7 @@ export class ScheduleBoletoService {
           format(maturityDate, 'yyyy-MM-dd')
         ) {
           if (!orderServiceItem.isSendNowDayMaturityBoleto) {
-            await this.sendOrUpdate(osId, 0, name, clientId, osNumber)
+            await this.sendOrUpdate(osId, 0, name, clientId, osNumber, total)
           }
         }
         if (
@@ -231,7 +244,7 @@ export class ScheduleBoletoService {
           })
         ) {
           if (!orderServiceItem.isSendThreeDayMaturityBoleto) {
-            await this.sendOrUpdate(osId, 3, name, clientId, osNumber)
+            await this.sendOrUpdate(osId, 3, name, clientId, osNumber, total)
           }
         }
       }

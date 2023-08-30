@@ -1,9 +1,8 @@
-import * as fs from 'fs'
-import * as readline from 'readline'
-import {google, Auth} from 'googleapis'
-import * as path from 'path'
 import {format, subDays} from 'date-fns'
-import readCSVFile from './functions/ReactFileCSV'
+import * as fs from 'fs'
+import {Auth, google} from 'googleapis'
+import * as path from 'path'
+import * as readline from 'readline'
 import {isDevelopmentEnvironment} from 'src/Common/Functions'
 
 const SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
@@ -153,17 +152,29 @@ export const readEmailsWithAttachments = async () => {
     //const currentDate = new Date().toISOString().split('T')[0]
     //const currentDate = format(new Date(), 'yyyy-MM-dd') // Obtém a data atual no formato 'YYYY-MM-DD'
 
-    const sevenDaysAgo = subDays(new Date(), 7)
-    const sevenDaysAgoFormatted = format(sevenDaysAgo, 'yyyy-MM-dd') // Obtém a data de 7 dias atrás no formato 'YYYY-MM-DD'
+    const twoDaysAgo = subDays(new Date(), 2)
+    const twoDaysAgoFormatted = format(twoDaysAgo, 'yyyy-MM-dd') // Obtém a data de 7 dias atrás no formato 'YYYY-MM-DD'
 
-    const res = await gmail.users.messages.list({
-      userId: 'me',
-      q: `after:${sevenDaysAgoFormatted} has:attachment from:todomundo@nubank.com.br filename:csv`,
-      //q: `after:${sevenDaysAgoFormatted} has:attachment from:solution.financeiro2012@gmail.com filename:csv`,
-      //q: `older_than:0d has:attachment from:solution.financeiro2012@gmail.com filename:csv`,
-      // q: `is:unread before:${currentDate} has:attachment from:solution.financeiro2012@gmail.com filename:pdf`,
-      //q: 'has:attachment from:solution.financeiro2012@gmail.com filename:csv',
-    })
+    let res = null
+
+    if (!isDevelopmentEnvironment) {
+      res = await gmail.users.messages.list({
+        userId: 'me',
+        q: `after:${twoDaysAgoFormatted} has:attachment from:todomundo@nubank.com.br filename:csv`,
+        //q: `after:${sevenDaysAgoFormatted} has:attachment from:solution.financeiro2012@gmail.com filename:csv`,
+        //q: `older_than:0d has:attachment from:solution.financeiro2012@gmail.com filename:csv`,
+        // q: `is:unread before:${currentDate} has:attachment from:solution.financeiro2012@gmail.com filename:pdf`,
+        //q: 'has:attachment from:solution.financeiro2012@gmail.com filename:csv',
+      })
+    } else {
+      res = await gmail.users.messages.list({
+        userId: 'me',
+        q: `after:${twoDaysAgoFormatted} has:attachment from:solution.financeiro2012@gmail.com filename:csv`,
+        //q: `older_than:0d has:attachment from:solution.financeiro2012@gmail.com filename:csv`,
+        // q: `is:unread before:${currentDate} has:attachment from:solution.financeiro2012@gmail.com filename:pdf`,
+        //q: 'has:attachment from:solution.financeiro2012@gmail.com filename:csv',
+      })
+    }
 
     const messages = res.data.messages
     if (messages && messages.length > 0) {

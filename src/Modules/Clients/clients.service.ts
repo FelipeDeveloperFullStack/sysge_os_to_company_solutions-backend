@@ -4,10 +4,9 @@ import {Model} from 'mongoose'
 import {isDevelopmentEnvironment} from 'src/Common/Functions'
 import {
   createFolder,
-  listFolder,
   destroy,
+  listFolder,
 } from '../OrderService/googleDrive/gdrive'
-import {ServiceService} from '../OrderService/services.service'
 import {ClientDto} from './dto/client.dto'
 import {ClientFilterDto} from './dto/client.filter.dto'
 import {Client, ClientDocument} from './entities/client.entity'
@@ -88,6 +87,10 @@ export class ClientsService {
 
   async findOne(id: string) {
     return await this.clientModel.findOne({_id: id})
+  }
+
+  async findCpfOrCnpj(cpfOrCnpj: string) {
+    return await this.clientModel.findOne({cpfOrCnpj})
   }
 
   async update(id: string, client: ClientDto, user: string) {

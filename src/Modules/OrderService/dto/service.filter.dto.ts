@@ -1,4 +1,5 @@
 import {IsOptional} from 'class-validator'
+import {ClientT} from './type'
 
 export class ServiceFilterDto {
   @IsOptional()
@@ -6,4 +7,7 @@ export class ServiceFilterDto {
 
   @IsOptional()
   public osNumber: string
+
+  @IsOptional()
+  public client: ClientT
 }

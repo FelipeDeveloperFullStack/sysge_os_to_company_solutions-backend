@@ -3,19 +3,19 @@ import {IsEmail, IsOptional, IsString} from 'class-validator'
 export class ClientFilterDto {
   @IsString()
   @IsOptional()
-  public name: string
+  public name?: string
 
   @IsString()
   @IsOptional()
-  public address: string
+  public address?: string
 
   @IsString()
   @IsOptional()
-  public city: string
+  public city?: string
 
   @IsString()
   @IsOptional()
-  public uf: string
+  public uf?: string
 
   @IsString()
   @IsOptional()
@@ -23,17 +23,17 @@ export class ClientFilterDto {
 
   @IsEmail()
   @IsOptional()
-  public email: string
+  public email?: string
 
   @IsString()
   @IsOptional()
-  public phoneNumber: string
+  public phoneNumber?: string
 
   @IsString()
   @IsOptional()
-  public phoneNumberFixo: string
+  public phoneNumberFixo?: string
 
   @IsString()
   @IsOptional()
-  public cep: string
+  public cep?: string
 }

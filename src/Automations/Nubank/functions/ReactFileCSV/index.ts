@@ -1,6 +1,6 @@
+import * as csvParser from 'csv-parser'
 import * as fs from 'fs'
 import * as path from 'path'
-import * as csvParser from 'csv-parser'
 
 export interface CsvData {
   Data: string
@@ -20,7 +20,9 @@ function removeDuplicatesByProperty<T>(arr: T[], prop: keyof T): T[] {
   return Array.from(uniqueMap.values())
 }
 
-async function readCSVFiles(): Promise<CsvData[] | null> {
+async function readCSVFiles(
+  isAllowPositiveValues?: boolean,
+): Promise<CsvData[] | null> {
   const folderPath = path.join('dist', 'Modules', 'files_gmail_nubank')
   if (fs.existsSync(folderPath)) {
     const extension = '.csv'
@@ -74,7 +76,9 @@ async function readCSVFiles(): Promise<CsvData[] | null> {
           ...csvItem,
           Valor: Number(csvItem.Valor),
         }))
-        .filter((csvItem) => csvItem.Valor < 0)
+        .filter((csvItem) =>
+          isAllowPositiveValues ? csvItem.Valor > 0 : csvItem.Valor < 0,
+        )
 
       // Remove duplicates based on a property value (assuming 'Valor' is the unique identifier)
       const uniqueResults = removeDuplicatesByProperty<CsvData>(

@@ -11,9 +11,19 @@ export class ConfigurationSystemController {
     return this.confiService.findAll()
   }
 
+  @Get('create-group')
+  createGroupNotification() {
+    return this.confiService.createGroupNotification()
+  }
+
   @Get('send')
   sendMidia(@Query() phoneNumber: string, osNumber: string) {
     return this.confiService.sendMidia(phoneNumber, osNumber)
+  }
+
+  @Get('send-message-into-group')
+  sendMessageGroup(@Query() idGroup: string, message: string) {
+    return this.confiService.sendMessageGroup(idGroup, message)
   }
 
   @Get('status/connection')

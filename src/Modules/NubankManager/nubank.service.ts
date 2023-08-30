@@ -19,8 +19,12 @@ import {
   default as readCSVFiles,
 } from 'src/Automations/Nubank/functions/ReactFileCSV'
 import {isDevelopmentEnvironment} from 'src/Common/Functions'
-import {formatPrice} from 'src/Common/Helpers/formatPrice'
+import {formatInputPrice, formatPrice} from 'src/Common/Helpers/formatPrice'
+import {ClientsService} from '../Clients/clients.service'
+import {ConfigurationSystemService} from '../Configurations/configurations.service'
 import {ExpenseService} from '../Expense/expenses.service'
+import {ServiceDto} from '../OrderService/dto/service.dto'
+import {ServiceService} from '../OrderService/services.service'
 import {ExtractNubankDto} from './dto/nubank.dto'
 import {ExtractNubankFilterDto} from './dto/nubank.filter.dto'
 import {ExtractNubank, ExtractNubankDocument} from './entities/nubank.entity'
@@ -37,6 +41,9 @@ export class ExtractNubankService implements OnModuleInit {
     @InjectModel(ExtractNubank.name)
     private nubankModel: Model<ExtractNubankDocument>,
     private readonly expense: ExpenseService,
+    private readonly orderService: ServiceService,
+    private readonly client: ClientsService,
+    private readonly configurationSystemService: ConfigurationSystemService,
   ) {}
 
   async deleteCSVFile() {
@@ -60,49 +67,128 @@ export class ExtractNubankService implements OnModuleInit {
     }
   }
 
-  async extractDataNubankEmail() {
-    //  A cada minuto: '*/5 * * * *'
-    //  Todos os dias as 5:00hrs da manha: '0 5 * * *'
-    if (!isDevelopmentEnvironment()) {
-      try {
-        this.logger.debug(
-          '[SISTEMA] - Iniciando a extracao do extrado do nubank...',
-        )
-        await readEmailsWithAttachments()
-        const dataReadable = await readCSVFiles()
-        dataReadable?.forEach(async (extract) => {
-          const hasExtract = await this.expense.findOneIdNubank(
-            String(extract.Identificador).trim(),
-          )
-          if (!hasExtract) {
-            // this.create({
-            //   dateIn: extract.Data,
-            //   description: extract['Descrição'],
-            //   id: extract.Identificador,
-            //   value: String(extract.Valor),
-            // })
-            const formated = formatPrice(extract.Valor * -1)
-            this.expense.create(
-              {
-                dateIn: extract.Data,
-                expense: extract['Descrição'],
-                maturity: '',
-                status: 'PAGO',
-                value: formated,
-                user: 'NUBANK',
-                idNubank: extract.Identificador,
-              },
-              'NUBANK',
+  async extractCPF(inputString: string) {
+    const cpfRegex = /(\d{3}\.\d{3}\.\d{3}-\d{2})/
+    const cpfMatches = inputString.match(cpfRegex)
+
+    if (cpfMatches) {
+      return cpfMatches[1]
+    }
+
+    return null
+  }
+
+  async extractCNPJ(inputString: string) {
+    const cnpjRegex = /(\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2})/
+    const cnpjMatches = inputString.match(cnpjRegex)
+
+    if (cnpjMatches) {
+      return cnpjMatches[1]
+    }
+
+    return null
+  }
+
+  async extractName(inputString: string) {
+    const nameRegex = /-\s*([^0-9-].+)/ // Exclui números, traços e hífens do início
+    const nameMatches = inputString.match(nameRegex)
+
+    if (nameMatches) {
+      return nameMatches[1].trim()
+    }
+
+    return null
+  }
+
+  async clearName(cnpjCpf: string, name: string) {
+    return name.replace(cnpjCpf, '').replace('-', '').trim()
+  }
+
+  async extractNameAndCpfCnpj(inputString: string) {
+    const cpf = await this.extractCPF(inputString)
+    const cnpj = await this.extractCNPJ(inputString)
+    const name = await this.clearName(
+      cnpj || cpf,
+      await this.extractName(inputString),
+    )
+    return {
+      cpf: cpf?.trim(),
+      cnpj: cnpj?.trim(),
+      name: name?.trim(),
+    }
+  }
+
+  async cancelThePayment(totalValueIncomeExtract: number, description: string) {
+    const {cpf, cnpj, name} = await this.extractNameAndCpfCnpj(description)
+    if (cpf || cnpj) {
+      const resultOrderService = await this.orderService.findAllWithoutParam()
+      const resultClient = await this.client.findCpfOrCnpj(cpf || cnpj)
+      const clientId = resultClient?.id
+      resultOrderService.forEach(async (item) => {
+        const {clean} = formatInputPrice(item?.total)
+        if (item.status === 'PENDENTE' && clean === totalValueIncomeExtract) {
+          if (item.client.id === clientId) {
+            const serviceDto: ServiceDto = {
+              status: 'PAGO',
+            } as ServiceDto
+            await this.orderService.update(item?.id, serviceDto)
+            const message = `✅ Pagamento Recebido ✅ \n*Cliente:* ${item?.client?.name} \n*OS Nª:* ${item?.osNumber} \n*Valor:* ${item?.total}`
+            await this.configurationSystemService.sendMessageGroup(
+              '120363169904240571@g.us',
+              message,
             )
           }
-        })
-        if (dataReadable?.length) {
-          await this.deleteCSVFile()
-          this.logger.debug('[SISTEMA] - Procedimento finalizado.')
         }
-      } catch (err) {
-        this.logger.error(err)
+      })
+    } else if (name) {
+    }
+  }
+
+  async extractDataNubankEmail() {
+    try {
+      this.logger.debug(
+        '[SISTEMA] - Iniciando a extracao do extrado do nubank...',
+      )
+      await readEmailsWithAttachments()
+
+      const dataReadablePositive = await readCSVFiles(true)
+      dataReadablePositive?.forEach(async (extract) => {
+        await this.cancelThePayment(extract.Valor, extract['Descrição'])
+      })
+
+      const dataReadableNegative = await readCSVFiles(false)
+      dataReadableNegative?.forEach(async (extract) => {
+        const hasExtract = await this.expense.findOneIdNubank(
+          String(extract.Identificador).trim(),
+        )
+        if (!hasExtract) {
+          // this.create({
+          //   dateIn: extract.Data,
+          //   description: extract['Descrição'],
+          //   id: extract.Identificador,
+          //   value: String(extract.Valor),
+          // })
+          const formated = formatPrice(extract.Valor * -1)
+          this.expense.create(
+            {
+              dateIn: extract.Data,
+              expense: extract['Descrição'],
+              maturity: '',
+              status: 'PAGO',
+              value: formated,
+              user: 'NUBANK',
+              idNubank: extract.Identificador,
+            },
+            'NUBANK',
+          )
+        }
+      })
+      if (dataReadableNegative?.length) {
+        await this.deleteCSVFile()
+        this.logger.debug('[SISTEMA] - Procedimento finalizado.')
       }
+    } catch (err) {
+      this.logger.error(err)
     }
   }
 
@@ -112,10 +198,17 @@ export class ExtractNubankService implements OnModuleInit {
    * Todos os dias as 5 horas da manha.
    */
   async onModuleInit() {
+    const oneMinuteDevelopment = '*/1 * * * *'
     const fiveHourInTheMorning = '0 5 * * *'
     const halfAnHour = '0 12 * * *'
     const sixHour = '0 18 * * *'
     const tenHour = '0 22 * * *'
+
+    cron.schedule(oneMinuteDevelopment, async () => {
+      if (isDevelopmentEnvironment()) {
+        await this.extractDataNubankEmail()
+      }
+    })
 
     cron.schedule(fiveHourInTheMorning, async () => {
       await this.extractDataNubankEmail()

@@ -124,6 +124,44 @@ export class ConfigurationSystemService {
     }
   }
 
+  async createGroupNotification() {
+    try {
+      let token = undefined
+      let ip = undefined
+      if (fs.existsSync('token_whatsapp.json')) {
+        token = await this.readTokenFromFile()
+      }
+      if (isDevelopmentEnvironment()) {
+        ip = '192.168.1.38' // Development virtual machine
+      } else {
+        ip = getLocalIP()
+      }
+      let instanceName = token?.instanceName
+      let jwt = token?.jwt
+      const {data} = await axios.post(
+        `http://${ip}:8083/group/create/${instanceName}`,
+        {
+          subject: 'Notificações - Solutions',
+          description: 'Notificações do sistema - Solutions',
+          participants: ['5562982370218', '5521996019608'],
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${jwt}`,
+          },
+        },
+      )
+      return data
+    } catch (error) {
+      throw new HttpException(
+        {
+          message: error,
+        },
+        HttpStatus.EXPECTATION_FAILED,
+      )
+    }
+  }
+
   async findAll() {
     return await this.configurationSystemModel.find()
   }
@@ -340,6 +378,41 @@ export class ConfigurationSystemService {
     }
   }
 
+  async sendMessageGroup(idGroup: string, message: string) {
+    try {
+      let token = undefined
+      let ip = undefined
+      if (fs.existsSync('token_whatsapp.json')) {
+        token = await this.readTokenFromFile()
+      }
+      if (isDevelopmentEnvironment()) {
+        ip = '192.168.1.38' // Development virtual machine
+      } else {
+        ip = getLocalIP()
+      }
+      let instanceName = token?.instanceName
+      let jwt = token?.jwt
+      await axios.post(
+        `http://${ip}:8083/message/sendText/${instanceName}`,
+        {
+          number: idGroup,
+          textMessage: {
+            text: message,
+          },
+          options: {
+            delay: 0,
+            presence: 'composing',
+          },
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${jwt}`,
+          },
+        },
+      )
+    } catch (error) {}
+  }
+
   async sendMidia(phoneNumber?: string, osNumber?: string) {
     try {
       let token = undefined
@@ -348,7 +421,7 @@ export class ConfigurationSystemService {
         token = await this.readTokenFromFile()
       }
       if (isDevelopmentEnvironment()) {
-        ip = '192.168.1.35' // Development virtual machine
+        ip = '192.168.1.38' // Development virtual machine
       } else {
         ip = getLocalIP()
       }
@@ -393,10 +466,10 @@ export class ConfigurationSystemService {
       ip = await this.readIPFromFile()
     }
     if (isDevelopmentEnvironment()) {
-      ip = '192.168.1.35' // Development virtual machine
+      ip = '192.168.1.38' // Development virtual machine
     }
     if (ip) {
-      // ip = '192.168.1.35'
+      // ip = '192.168.1.38'
       let instanceName = token?.instanceName
       let jwt = token?.jwt
       try {
@@ -419,11 +492,11 @@ export class ConfigurationSystemService {
       ip = await this.readIPFromFile()
     }
     if (isDevelopmentEnvironment()) {
-      ip = '192.168.1.35' // Development virtual machine
+      ip = '192.168.1.38' // Development virtual machine
     }
     if (ip) {
       try {
-        // ip = '192.168.1.35'
+        // ip = '192.168.1.38'
         const jwt = await this.createInstance(ip, instanceName)
         // await this.setInstance(instanceName, ip, jwt)
         await this.writeFileAsync(
