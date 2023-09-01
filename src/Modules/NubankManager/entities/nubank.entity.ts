@@ -13,6 +13,8 @@ export class ExtractNubank {
   public id: string
   @Prop()
   public description: string
+  @Prop()
+  public isIncomeDownloaded?: boolean
 }
 
 export const ExtractNubankSchema = SchemaFactory.createForClass(ExtractNubank)

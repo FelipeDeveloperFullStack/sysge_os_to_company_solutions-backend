@@ -92,12 +92,15 @@ export class ExtractNubankService implements OnModuleInit {
   async extractName(inputString: string) {
     const nameRegex = /-\s*([^0-9-].+)/ // Exclui números, traços e hífens do início
     const nameMatches = inputString.match(nameRegex)
-
+    const namePattern = /^[A-ZÀ-ÖØ-Þ][A-Za-zÀ-ÖØ-Þ\s]+-\s/
     if (nameMatches) {
-      return nameMatches[1].trim()
+      const nameMatch = nameMatches[1]?.trim().match(namePattern)
+      if (nameMatch) {
+        const name = nameMatch[0].replace(/-\s$/, '').trim()
+        return String(name).toUpperCase()
+      }
     }
-
-    return null
+    return ''
   }
 
   async clearName(cnpjCpf: string, name: string) {
@@ -118,29 +121,117 @@ export class ExtractNubankService implements OnModuleInit {
     }
   }
 
-  async cancelThePayment(totalValueIncomeExtract: number, description: string) {
-    const {cpf, cnpj, name} = await this.extractNameAndCpfCnpj(description)
-    if (cpf || cnpj) {
-      const resultOrderService = await this.orderService.findAllWithoutParam()
-      const resultClient = await this.client.findCpfOrCnpj(cpf || cnpj)
-      const clientId = resultClient?.id
-      resultOrderService.forEach(async (item) => {
+  async getOldestOS(osArray: any[]) {
+    if (osArray?.length === 0) {
+      return []
+    }
+
+    const sortedOSArray = osArray.sort((a, b) => {
+      const osNumberA = parseInt(a.osNumber)
+      const osNumberB = parseInt(b.osNumber)
+
+      return osNumberA - osNumberB
+    })
+
+    return [sortedOSArray[0]]
+  }
+
+  async compareQuantityRegisters(
+    resultOrderService: any[],
+    clientId: any,
+    totalValueIncomeExtract: number,
+  ) {
+    const resultOrderServiceSystem = resultOrderService.filter((item) => {
+      const {clean} = formatInputPrice(item?.total)
+      if (item.status === 'PENDENTE' && clean === totalValueIncomeExtract) {
+        if (item.client.id === clientId) {
+          return item
+        }
+      }
+    })
+    return {
+      resultOrderServiceSystem,
+    }
+  }
+
+  async updateStatusOrderServiceAndSendMessageWhatsapp(
+    clientId: string,
+    resultOrderService: any[],
+    totalValueIncomeExtract: number,
+    idExtractIncome: string,
+  ) {
+    try {
+      const resultOrderServiceSystem = resultOrderService.filter((item) => {
         const {clean} = formatInputPrice(item?.total)
         if (item.status === 'PENDENTE' && clean === totalValueIncomeExtract) {
           if (item.client.id === clientId) {
+            return item
+          }
+        }
+      })
+      const resultOSFiltered = await this.getOldestOS(resultOrderServiceSystem)
+      resultOSFiltered.forEach(
+        async (item: {
+          id: string
+          client: {name: string}
+          osNumber: string
+          total: string
+        }) => {
+          try {
             const serviceDto: ServiceDto = {
               status: 'PAGO',
             } as ServiceDto
             await this.orderService.update(item?.id, serviceDto)
+
+            await this.updateIncomeDownloaded(idExtractIncome, true)
+
             const message = `✅ Pagamento Recebido ✅ \n*Cliente:* ${item?.client?.name} \n*OS Nª:* ${item?.osNumber} \n*Valor:* ${item?.total}`
             await this.configurationSystemService.sendMessageGroup(
               '120363169904240571@g.us',
               message,
             )
+          } catch (err) {
+            this.logger.error(err)
           }
+        },
+      )
+    } catch (error) {}
+  }
+
+  async cancelThePayment(
+    totalValueIncomeExtract: number,
+    description: string,
+    idExtractIncome: string,
+  ) {
+    const hasIncomeDownloaded = await this.findOne(idExtractIncome)
+
+    if (!hasIncomeDownloaded?.isIncomeDownloaded) {
+      const {cpf, cnpj, name} = await this.extractNameAndCpfCnpj(description)
+      if (cpf || cnpj) {
+        const resultOrderService = await this.orderService.findAllWithoutParam()
+        const resultClient = await this.client.findCpfOrCnpj(cpf || cnpj)
+        const clientId = resultClient?.id
+        if (clientId) {
+          await this.updateStatusOrderServiceAndSendMessageWhatsapp(
+            clientId,
+            resultOrderService,
+            totalValueIncomeExtract,
+            idExtractIncome,
+          )
         }
-      })
-    } else if (name) {
+      } else if (name) {
+        const resultOrderService = await this.orderService.findAllWithoutParam()
+        const resultClient = await this.client.findByName(name)
+        const clientId = resultClient?.id
+        if (clientId) {
+          await this.updateStatusOrderServiceAndSendMessageWhatsapp(
+            clientId,
+            resultOrderService,
+            totalValueIncomeExtract,
+            idExtractIncome,
+          )
+        }
+      }
     }
   }
 
@@ -153,7 +244,22 @@ export class ExtractNubankService implements OnModuleInit {
 
       const dataReadablePositive = await readCSVFiles(true)
       dataReadablePositive?.forEach(async (extract) => {
-        await this.cancelThePayment(extract.Valor, extract['Descrição'])
+        const hasExtract = await this.nubankModel.findOne({
+          id: extract.Identificador,
+        })
+        if (!hasExtract) {
+          await this.create({
+            dateIn: extract.Data,
+            description: extract['Descrição'],
+            id: extract.Identificador,
+            value: String(extract.Valor),
+          })
+        }
+        await this.cancelThePayment(
+          extract.Valor,
+          extract['Descrição'],
+          extract.Identificador,
+        )
       })
 
       const dataReadableNegative = await readCSVFiles(false)
@@ -162,12 +268,6 @@ export class ExtractNubankService implements OnModuleInit {
           String(extract.Identificador).trim(),
         )
         if (!hasExtract) {
-          // this.create({
-          //   dateIn: extract.Data,
-          //   description: extract['Descrição'],
-          //   id: extract.Identificador,
-          //   value: String(extract.Valor),
-          // })
           const formated = formatPrice(extract.Valor * -1)
           this.expense.create(
             {
@@ -246,6 +346,26 @@ export class ExtractNubankService implements OnModuleInit {
         },
         HttpStatus.FORBIDDEN,
       )
+    }
+  }
+
+  async updateIncomeDownloaded(id: string, isIncomeDownloaded: boolean) {
+    try {
+      await this.nubankModel.updateOne(
+        {
+          id,
+        },
+        {
+          $set: {
+            isIncomeDownloaded,
+          },
+        },
+      )
+      return {
+        status: HttpStatus.OK,
+      }
+    } catch (error) {
+      this.logger.error(error)
     }
   }
 

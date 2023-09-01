@@ -1,4 +1,4 @@
-import {IsNotEmpty, IsOptional, IsString} from 'class-validator'
+import {IsOptional, IsString} from 'class-validator'
 
 export class ExtractNubankDto {
   @IsOptional()
@@ -16,4 +16,7 @@ export class ExtractNubankDto {
   @IsOptional()
   @IsString()
   public description: string
+
+  @IsOptional()
+  public isIncomeDownloaded?: boolean
 }

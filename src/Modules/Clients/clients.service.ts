@@ -89,6 +89,10 @@ export class ClientsService {
     return await this.clientModel.findOne({_id: id})
   }
 
+  async findByName(clientName: string) {
+    return await this.clientModel.findOne({name: clientName})
+  }
+
   async findCpfOrCnpj(cpfOrCnpj: string) {
     return await this.clientModel.findOne({cpfOrCnpj})
   }
