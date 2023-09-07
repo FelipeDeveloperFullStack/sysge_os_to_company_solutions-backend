@@ -152,7 +152,7 @@ export const readEmailsWithAttachments = async () => {
     //const currentDate = new Date().toISOString().split('T')[0]
     //const currentDate = format(new Date(), 'yyyy-MM-dd') // Obtém a data atual no formato 'YYYY-MM-DD'
 
-    const twoDaysAgo = subDays(new Date(), 2)
+    const twoDaysAgo = subDays(new Date(), 7)
     const twoDaysAgoFormatted = format(twoDaysAgo, 'yyyy-MM-dd') // Obtém a data de 7 dias atrás no formato 'YYYY-MM-DD'
 
     let res = null
