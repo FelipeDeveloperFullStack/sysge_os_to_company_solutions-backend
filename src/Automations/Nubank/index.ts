@@ -152,7 +152,7 @@ export const readEmailsWithAttachments = async () => {
     //const currentDate = new Date().toISOString().split('T')[0]
     //const currentDate = format(new Date(), 'yyyy-MM-dd') // Obtém a data atual no formato 'YYYY-MM-DD'
 
-    const twoDaysAgo = subDays(new Date(), 7)
+    const twoDaysAgo = subDays(new Date(), 5)
     const twoDaysAgoFormatted = format(twoDaysAgo, 'yyyy-MM-dd') // Obtém a data de 7 dias atrás no formato 'YYYY-MM-DD'
 
     let res = null
@@ -160,8 +160,8 @@ export const readEmailsWithAttachments = async () => {
     if (!isDevelopmentEnvironment) {
       res = await gmail.users.messages.list({
         userId: 'me',
-        q: `older_than:0d has:attachment from:todomundo@nubank.com.br filename:csv`,
-        // q: `after:${twoDaysAgoFormatted} has:attachment from:todomundo@nubank.com.br filename:csv`,
+        q: `after:${twoDaysAgoFormatted} has:attachment from:todomundo@nubank.com.br filename:csv`,
+        // q: `older_than:0d has:attachment from:todomundo@nubank.com.br filename:csv`,
         //q: `after:${sevenDaysAgoFormatted} has:attachment from:solution.financeiro2012@gmail.com filename:csv`,
         // q: `is:unread before:${currentDate} has:attachment from:solution.financeiro2012@gmail.com filename:pdf`,
         //q: 'has:attachment from:solution.financeiro2012@gmail.com filename:csv',
