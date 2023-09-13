@@ -299,8 +299,8 @@ export class ExtractNubankService implements OnModuleInit {
    */
   async onModuleInit() {
     const oneMinuteDevelopment = '*/1 * * * *'
-    // const fiveHourInTheMorning = '0 5 * * *'
-    const fiveHourInTheMorning = '*/5 * * * *'
+    const fiveHourInTheMorning = '0 5 * * *'
+    //const fiveHourInTheMorning = '*/5 * * * *'
     const halfAnHour = '0 12 * * *'
     const sixHour = '0 18 * * *'
     const tenHour = '0 22 * * *'
