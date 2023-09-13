@@ -264,24 +264,26 @@ export class ExtractNubankService implements OnModuleInit {
 
       const dataReadableNegative = await readCSVFiles(false)
       dataReadableNegative?.forEach(async (extract) => {
-        const hasExtract = await this.expense.findOneIdNubank(
+        // const hasExtract = await this.expense.findOneIdNubank(
+        //   String(extract.Identificador).trim(),
+        // )
+        await this.expense.removeByIdNubank(
           String(extract.Identificador).trim(),
         )
-        if (!hasExtract) {
-          const formated = formatPrice(extract.Valor * -1)
-          this.expense.create(
-            {
-              dateIn: extract.Data,
-              expense: extract['Descrição'],
-              maturity: '',
-              status: 'PAGO',
-              value: formated,
-              user: 'NUBANK',
-              idNubank: extract.Identificador,
-            },
-            'NUBANK',
-          )
-        }
+        const formated = formatPrice(extract.Valor * -1)
+        this.expense.create(
+          {
+            dateIn: extract.Data,
+            expense: extract['Descrição'],
+            maturity: '',
+            status: 'PAGO',
+            value: formated,
+            user: 'NUBANK',
+            idNubank: extract.Identificador,
+          },
+          'NUBANK',
+        )
+        // if (!hasExtract) {}
       })
       if (dataReadableNegative?.length) {
         await this.deleteCSVFile()

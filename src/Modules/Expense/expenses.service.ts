@@ -1,11 +1,11 @@
 import {HttpException, HttpStatus, Injectable} from '@nestjs/common'
 import {InjectModel} from '@nestjs/mongoose'
+import {addDays, isBefore, isWithinInterval, parse} from 'date-fns'
 import {Model} from 'mongoose'
-import {formatInputPrice, formatPrice} from 'src/Common/Helpers/formatPrice'
+import {formatInputPrice} from 'src/Common/Helpers/formatPrice'
 import {ExpenselDto} from './dto/expense.dto'
 import {ExpenseFilterDto} from './dto/expense.filter.dto'
 import {Expense as _Model, ModelDocument} from './entities/expense.entity'
-import {parse, isWithinInterval, addDays, isBefore} from 'date-fns'
 
 @Injectable()
 export class ExpenseService {
@@ -136,7 +136,7 @@ export class ExpenseService {
     try {
       await this.expenseModel.deleteOne({_id: id})
       return {
-        status: HttpStatus.CREATED,
+        status: HttpStatus.OK,
       }
     } catch (error) {
       throw new HttpException(
@@ -147,6 +147,23 @@ export class ExpenseService {
       )
     }
   }
+
+  async removeByIdNubank(idNubank: string) {
+    try {
+      await this.expenseModel.deleteOne({idNubank})
+      return {
+        status: HttpStatus.OK,
+      }
+    } catch (error) {
+      throw new HttpException(
+        {
+          message: error,
+        },
+        HttpStatus.EXPECTATION_FAILED,
+      )
+    }
+  }
+
   async getExpensesData() {
     const today = new Date()
     const threeDaysFromNow = addDays(today, 3)
