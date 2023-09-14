@@ -316,15 +316,15 @@ export class ExtractNubankService implements OnModuleInit {
     cron.schedule(fiveHourInTheMorning, async () => {
       await this.extractDataNubankEmail()
     })
-    cron.schedule(halfAnHour, async () => {
-      await this.extractDataNubankEmail()
-    })
-    cron.schedule(sixHour, async () => {
-      await this.extractDataNubankEmail()
-    })
-    cron.schedule(tenHour, async () => {
-      await this.extractDataNubankEmail()
-    })
+    // cron.schedule(halfAnHour, async () => {
+    //   await this.extractDataNubankEmail()
+    // })
+    // cron.schedule(sixHour, async () => {
+    //   await this.extractDataNubankEmail()
+    // })
+    // cron.schedule(tenHour, async () => {
+    //   await this.extractDataNubankEmail()
+    // })
   }
 
   async create(extract: ExtractNubankDto) {
