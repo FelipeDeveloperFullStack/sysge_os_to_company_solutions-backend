@@ -153,14 +153,15 @@ export const readEmailsWithAttachments = async () => {
     //const currentDate = format(new Date(), 'yyyy-MM-dd') // Obtém a data atual no formato 'YYYY-MM-DD'
 
     const twoDaysAgo = subDays(new Date(), 5)
-    const twoDaysAgoFormatted = format(twoDaysAgo, 'yyyy-MM-dd') // Obtém a data de 7 dias atrás no formato 'YYYY-MM-DD'
+    const twoDaysAgoFormatted = format(twoDaysAgo, 'yyyy-MM-dd') // Obtém a data de 5 dias atrás no formato 'YYYY-MM-DD'
 
     let res = null
 
     if (!isDevelopmentEnvironment) {
       res = await gmail.users.messages.list({
         userId: 'me',
-        q: `after:${twoDaysAgoFormatted} has:attachment from:todomundo@nubank.com.br filename:csv`,
+        q: `after:${twoDaysAgoFormatted} has:attachment in:inbox from:todomundo@nubank.com.br filename:csv`,
+        maxResults: 1,
         // q: `older_than:0d has:attachment from:todomundo@nubank.com.br filename:csv`,
         //q: `after:${sevenDaysAgoFormatted} has:attachment from:solution.financeiro2012@gmail.com filename:csv`,
         // q: `is:unread before:${currentDate} has:attachment from:solution.financeiro2012@gmail.com filename:pdf`,
@@ -169,14 +170,32 @@ export const readEmailsWithAttachments = async () => {
     } else {
       res = await gmail.users.messages.list({
         userId: 'me',
-        q: `after:${twoDaysAgoFormatted} has:attachment from:solution.financeiro2012@gmail.com filename:csv`,
+        q: `after:${twoDaysAgoFormatted} has:attachment in:inbox from:solution.financeiro2012@gmail.com filename:csv`,
+        maxResults: 1,
         //q: `older_than:0d has:attachment from:solution.financeiro2012@gmail.com filename:csv`,
         // q: `is:unread before:${currentDate} has:attachment from:solution.financeiro2012@gmail.com filename:pdf`,
         //q: 'has:attachment from:solution.financeiro2012@gmail.com filename:csv',
       })
     }
+    let messages = null
+    // Verificar se há mensagens correspondentes
+    if (res.data.messages && res.data.messages.length > 0) {
+      // Ordenar as mensagens pelo horário de recebimento (do mais recente ao mais antigo)
+      res.data.messages.sort((a, b) => {
+        return b.internalDate - a.internalDate
+      })
 
-    const messages = res.data.messages
+      // Pegar a mensagem mais recente com anexo
+      const messageId = res.data.messages[0].id
+      messages = res.data.messages
+      // Agora você tem o ID da mensagem mais recente com anexo que corresponde à sua consulta
+      // Use o messageId para obter o conteúdo da mensagem, se necessário
+      console.log('Mensagem mais recente com anexo:', messageId)
+    } else {
+      console.log('Nenhuma mensagem correspondente encontrada.')
+      messages = res.data.messages
+    }
+
     if (messages && messages.length > 0) {
       for (const message of messages) {
         const messageDetails = await gmail.users.messages.get({
