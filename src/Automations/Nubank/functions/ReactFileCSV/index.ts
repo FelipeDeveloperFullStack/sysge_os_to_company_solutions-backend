@@ -86,7 +86,7 @@ async function readCSVFiles(
         'Identificador',
       )
 
-      return uniqueResults
+      return processedResults
     } catch (err) {
       console.error('[SISTEMA] - Error accessing the folder or files:', err)
       return null
