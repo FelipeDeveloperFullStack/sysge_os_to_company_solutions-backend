@@ -301,8 +301,8 @@ export class ExtractNubankService implements OnModuleInit {
    */
   async onModuleInit() {
     const oneMinuteDevelopment = '*/5 * * * *'
-    //const fiveHourInTheMorning = '0 5 * * *'
-    const fiveHourInTheMorning = '*/5 * * * *'
+    const fiveHourInTheMorning = '0 5 * * *'
+    //const fiveHourInTheMorning = '*/5 * * * *'
     const halfAnHour = '0 12 * * *'
     const sixHour = '0 18 * * *'
     const tenHour = '0 22 * * *'
@@ -312,19 +312,18 @@ export class ExtractNubankService implements OnModuleInit {
         await this.extractDataNubankEmail()
       }
     })
-
     cron.schedule(fiveHourInTheMorning, async () => {
       await this.extractDataNubankEmail()
     })
-    // cron.schedule(halfAnHour, async () => {
-    //   await this.extractDataNubankEmail()
-    // })
-    // cron.schedule(sixHour, async () => {
-    //   await this.extractDataNubankEmail()
-    // })
-    // cron.schedule(tenHour, async () => {
-    //   await this.extractDataNubankEmail()
-    // })
+    cron.schedule(halfAnHour, async () => {
+      await this.extractDataNubankEmail()
+    })
+    cron.schedule(sixHour, async () => {
+      await this.extractDataNubankEmail()
+    })
+    cron.schedule(tenHour, async () => {
+      await this.extractDataNubankEmail()
+    })
   }
 
   async create(extract: ExtractNubankDto) {
