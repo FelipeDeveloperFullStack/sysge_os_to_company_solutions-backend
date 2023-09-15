@@ -300,7 +300,7 @@ export class ExtractNubankService implements OnModuleInit {
    * Todos os dias as 5 horas da manha.
    */
   async onModuleInit() {
-    const oneMinuteDevelopment = '*/1 * * * *'
+    const oneMinuteDevelopment = '*/5 * * * *'
     //const fiveHourInTheMorning = '0 5 * * *'
     const fiveHourInTheMorning = '*/5 * * * *'
     const halfAnHour = '0 12 * * *'

@@ -156,27 +156,20 @@ export const readEmailsWithAttachments = async () => {
     const twoDaysAgoFormatted = format(twoDaysAgo, 'yyyy-MM-dd') // Obtém a data de 5 dias atrás no formato 'YYYY-MM-DD'
 
     let res = null
-
     if (!isDevelopmentEnvironment) {
       res = await gmail.users.messages.list({
         userId: 'me',
         q: `after:${twoDaysAgoFormatted} has:attachment from:todomundo@nubank.com.br filename:csv`,
         maxResults: 1,
-        // q: `older_than:0d has:attachment from:todomundo@nubank.com.br filename:csv`,
-        //q: `after:${sevenDaysAgoFormatted} has:attachment from:solution.financeiro2012@gmail.com filename:csv`,
-        // q: `is:unread before:${currentDate} has:attachment from:solution.financeiro2012@gmail.com filename:pdf`,
-        //q: 'has:attachment from:solution.financeiro2012@gmail.com filename:csv',
       })
     } else {
       res = await gmail.users.messages.list({
         userId: 'me',
-        q: `after:${twoDaysAgoFormatted} has:attachment in:inbox from:solution.financeiro2012@gmail.com filename:csv`,
+        q: `after:${twoDaysAgoFormatted} has:attachment from:solution.financeiro2012@gmail.com filename:csv`,
         maxResults: 1,
-        //q: `older_than:0d has:attachment from:solution.financeiro2012@gmail.com filename:csv`,
-        // q: `is:unread before:${currentDate} has:attachment from:solution.financeiro2012@gmail.com filename:pdf`,
-        //q: 'has:attachment from:solution.financeiro2012@gmail.com filename:csv',
       })
     }
+    console.log({res})
     let messages = null
     // Verificar se há mensagens correspondentes
     if (res.data.messages && res.data.messages.length > 0) {
