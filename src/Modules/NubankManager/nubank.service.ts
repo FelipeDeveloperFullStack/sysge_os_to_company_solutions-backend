@@ -10,7 +10,6 @@ import {subDays} from 'date-fns'
 import * as fs from 'fs'
 import {Auth, google} from 'googleapis'
 import {Model} from 'mongoose'
-import * as cron from 'node-cron'
 import * as path from 'path'
 import * as readline from 'readline'
 import {readEmailsWithAttachments} from 'src/Automations/Nubank'
@@ -18,7 +17,6 @@ import {
   default as readCSVFile,
   default as readCSVFiles,
 } from 'src/Automations/Nubank/functions/ReactFileCSV'
-import {isDevelopmentEnvironment} from 'src/Common/Functions'
 import {formatInputPrice, formatPrice} from 'src/Common/Helpers/formatPrice'
 import {ClientsService} from '../Clients/clients.service'
 import {ConfigurationSystemService} from '../Configurations/configurations.service'
@@ -307,23 +305,23 @@ export class ExtractNubankService implements OnModuleInit {
     const sixHour = '0 18 * * *'
     const tenHour = '0 22 * * *'
 
-    cron.schedule(oneMinuteDevelopment, async () => {
-      if (isDevelopmentEnvironment()) {
-        await this.extractDataNubankEmail()
-      }
-    })
-    cron.schedule(fiveHourInTheMorning, async () => {
-      await this.extractDataNubankEmail()
-    })
-    cron.schedule(halfAnHour, async () => {
-      await this.extractDataNubankEmail()
-    })
-    cron.schedule(sixHour, async () => {
-      await this.extractDataNubankEmail()
-    })
-    cron.schedule(tenHour, async () => {
-      await this.extractDataNubankEmail()
-    })
+    // cron.schedule(oneMinuteDevelopment, async () => {
+    //   if (isDevelopmentEnvironment()) {
+    //     await this.extractDataNubankEmail()
+    //   }
+    // })
+    // cron.schedule(fiveHourInTheMorning, async () => {
+    //   await this.extractDataNubankEmail()
+    // })
+    // cron.schedule(halfAnHour, async () => {
+    //   await this.extractDataNubankEmail()
+    // })
+    // cron.schedule(sixHour, async () => {
+    //   await this.extractDataNubankEmail()
+    // })
+    // cron.schedule(tenHour, async () => {
+    //   await this.extractDataNubankEmail()
+    // })
   }
 
   async create(extract: ExtractNubankDto) {

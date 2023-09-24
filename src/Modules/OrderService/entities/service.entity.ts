@@ -41,6 +41,9 @@ export class OrderService {
   public status: string
 
   @Prop()
+  public description?: string
+
+  @Prop()
   public formOfPayment: string
 
   @Prop()

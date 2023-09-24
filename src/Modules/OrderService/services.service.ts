@@ -46,9 +46,13 @@ export class ServiceService {
   ) {}
 
   async create(createServiceDto: ServiceDto, user: string) {
+    if (createServiceDto && !Object.values(createServiceDto).length) {
+      return
+    }
     createServiceDto = {
       ...createServiceDto,
       user,
+      description: createServiceDto?.description || '',
     }
     const service = new this.serviceModel(createServiceDto)
 
@@ -366,7 +370,8 @@ export class ServiceService {
       if (
         String(element.status).trim() === 'PENDENTE' &&
         String(element.formOfPayment).trim() === 'Boleto' &&
-        !element.isBoletoUploaded
+        !element.isBoletoUploaded &&
+        String(element.description).trim() !== 'NOTINHA'
       ) {
         const hasBoletoFile = await this.findFileByOrderNumber(element.osNumber)
         if (!hasBoletoFile) {
@@ -396,10 +401,11 @@ export class ServiceService {
       const clientId = element?.client?.id
       if (
         String(element.status).trim() === 'PENDENTE' &&
-        String(element.formOfPayment).trim() === 'Boleto'
+        String(element.formOfPayment).trim() === 'Boleto' &&
+        String(element.description).trim() !== 'NOTINHA'
       ) {
         const result = await this.clientsService.findOne(clientId)
-        if (result.withoutEmail) {
+        if (result?.withoutEmail) {
           clients.push(result)
         }
       }
@@ -542,7 +548,11 @@ export class ServiceService {
         'dd/MM/yyyy',
         new Date(),
       )
-      if (income.status === 'PENDENTE' && income.formOfPayment === 'Boleto') {
+      if (
+        income.status === 'PENDENTE' &&
+        income.formOfPayment === 'Boleto' &&
+        income.description !== 'NOTINHA'
+      ) {
         if (
           isWithinInterval(maturityDate, {start: today, end: threeDaysFromNow})
         ) {
