@@ -414,12 +414,7 @@ export class ServiceService {
   }
 
   async findAll(serviceFilter: ServiceFilterDto) {
-    const service = {
-      description: new RegExp(serviceFilter.clientName, 'i'),
-      // status: 'PENDENTE',
-      //laudoService: new RegExp(serviceFilter.laudoService, 'i'),
-    }
-    return await this.serviceModel.find(service)
+    return await this.serviceModel.find()
   }
 
   async callDeleteMergedPDFs(
