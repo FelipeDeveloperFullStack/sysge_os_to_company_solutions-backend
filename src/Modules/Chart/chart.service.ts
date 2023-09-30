@@ -90,8 +90,8 @@ export class ChartService {
   async getChartData() {
     const resultOrderService = await this.orderService.findAllWithoutParam()
     const resultExpense = await this.expense.findAll()
-    const {data: resultPersonalExpense} =
-      await this.expense.findAllPersonalExpense()
+    // const {data: resultPersonalExpense} =
+    //   await this.expense.findAllPersonalExpense()
 
     const totalMonth = {}
     const totalMonthExpense = {}
@@ -126,7 +126,11 @@ export class ChartService {
         'dd/MM/yyyy',
         new Date(),
       ).getFullYear()
-      if (expense.status === 'PAGO' && expenseYear === currentYear) {
+      if (
+        expense.status === 'PAGO' &&
+        expenseYear === currentYear &&
+        expense?.expense_type === 'Empresa'
+      ) {
         const dateExpenseIn = parse(expense.dateIn, 'dd/MM/yyyy', new Date())
         const formatedMonth = format(dateExpenseIn, 'MMM', {locale: ptBR})
         const {clean} = formatInputPrice(expense.value)
@@ -137,13 +141,16 @@ export class ChartService {
         }
       }
     })
-    resultPersonalExpense.forEach((personalExpense) => {
+    resultExpense.forEach((personalExpense) => {
       const personalExpenseYear = parse(
         personalExpense.dateIn,
         'dd/MM/yyyy',
         new Date(),
       ).getFullYear()
-      if (personalExpenseYear === currentYear) {
+      if (
+        personalExpenseYear === currentYear &&
+        personalExpense?.expense_type === 'Pessoal'
+      ) {
         const dateExpenseIn = parse(
           personalExpense.dateIn,
           'dd/MM/yyyy',
