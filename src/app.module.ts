@@ -2,6 +2,8 @@ import {Module, OnApplicationBootstrap} from '@nestjs/common'
 import {ConfigModule} from '@nestjs/config'
 import {EventEmitterModule} from '@nestjs/event-emitter'
 import {MongooseModule} from '@nestjs/mongoose'
+import {MulterModule} from '@nestjs/platform-express'
+import {IoAdapter} from '@nestjs/platform-socket.io'
 import {ScheduleModule} from '@nestjs/schedule'
 import {MongodbModule} from 'src/Database/Mongodb/mongodb.module'
 import {MailModule} from './mails/mail.module'
@@ -9,17 +11,16 @@ import {AuthModule} from './Modules/Authentication/AuthToken/auth/auth.module'
 import {ConnectionUserWaModule} from './Modules/Authentication/connectionUserWa/connection-user-wa.module'
 import {AuthorizationModule} from './Modules/Authorization/authorization.module'
 import {EquipamentsModule} from './Modules/Brands/equipaments.module'
+import {ChartModule} from './Modules/Chart/chart.module'
 import {ClientsModule} from './Modules/Clients/clients.module'
+import {ConfigurationSystemModule} from './Modules/Configurations/configurations.module'
+import {ExpensesModule} from './Modules/Expense/expenses.module'
 import {ModelsModule} from './Modules/Model/models.module'
+import {ExtractNubankModule} from './Modules/NubankManager/nubank.module'
+import {OrderServicesModule} from './Modules/OrderService/services.module'
 import {PiecesModule} from './Modules/Pieces/pieces.module'
 import {ServicesModule} from './Modules/Service/services.module'
-import {OrderServicesModule} from './Modules/OrderService/services.module'
-import {ExpensesModule} from './Modules/Expense/expenses.module'
 import {ScheduleBoletoService} from './Schedule/EmailBoleto/ScheduleBoletoService'
-import {MulterModule} from '@nestjs/platform-express'
-import {ExtractNubankModule} from './Modules/NubankManager/nubank.module'
-import {ChartModule} from './Modules/Chart/chart.module'
-import {ConfigurationSystemModule} from './Modules/Configurations/configurations.module'
 import {SocketService} from './Socket/socket.service'
 
 @Module({
@@ -64,7 +65,14 @@ import {SocketService} from './Socket/socket.service'
     ConfigurationSystemModule,
   ],
   controllers: [],
-  providers: [ScheduleBoletoService, SocketService],
+  providers: [
+    ScheduleBoletoService,
+    SocketService,
+    {
+      provide: 'wss',
+      useValue: new IoAdapter(), // Use o IoAdapter para WebSocket
+    },
+  ],
 })
 export class AppModule implements OnApplicationBootstrap {
   constructor(private readonly scheduleService: ScheduleBoletoService) {}

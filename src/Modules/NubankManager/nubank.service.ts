@@ -12,12 +12,13 @@ import {Auth, google} from 'googleapis'
 import {Model} from 'mongoose'
 import * as path from 'path'
 import * as readline from 'readline'
-import {readEmailsWithAttachments} from 'src/Automations/Nubank'
 import {
   default as readCSVFile,
   default as readCSVFiles,
 } from 'src/Automations/Nubank/functions/ReactFileCSV'
 import {formatInputPrice, formatPrice} from 'src/Common/Helpers/formatPrice'
+import {SocketService} from 'src/Socket/socket.service'
+//import {SocketService} from 'src/Socket/socket.service'
 import {ClientsService} from '../Clients/clients.service'
 import {ConfigurationSystemService} from '../Configurations/configurations.service'
 import {ExpenseService} from '../Expense/expenses.service'
@@ -42,6 +43,7 @@ export class ExtractNubankService implements OnModuleInit {
     private readonly orderService: ServiceService,
     private readonly client: ClientsService,
     private readonly configurationSystemService: ConfigurationSystemService,
+    private readonly socketService: SocketService,
   ) {}
 
   async deleteCSVFile() {
@@ -233,60 +235,152 @@ export class ExtractNubankService implements OnModuleInit {
     }
   }
 
-  async extractDataNubankEmail() {
+  async renameFileWithNumberAtEnd(fileName: string) {
+    // Use a regular expression to find the number within parentheses at the end of the file name
+    const regex = /\s\(\d+\)\./
+
+    // Check if the file name matches the regular expression
+    if (regex.test(fileName)) {
+      // Use the replace method to remove the number within parentheses
+      const newFileName = fileName.replace(regex, '.')
+      return newFileName
+    } else {
+      // If there is no match, return the original file name
+      return fileName
+    }
+  }
+
+  async saveFileCsvInFolder(files: Express.Multer.File[], folderPath: string) {
+    try {
+      files.forEach(async (file, index) => {
+        // const newFileName = await this.renameFileWithNumberAtEnd(
+        //   file.originalname,
+        // )
+        const newFilePath = path.join(folderPath, file.originalname)
+        this.logger.log(
+          `[Sistema] - Salvando o extrato ${file.originalname} na pasta temporaria...`,
+        )
+        await fs.promises.writeFile(newFilePath, file.buffer)
+        this.logger.log(
+          `[Sistema] - 'Arquivo ${file.originalname} salvo com sucesso!'`,
+        )
+      })
+    } catch (error) {
+      this.logger.error(error)
+      throw new HttpException(
+        {
+          message: error,
+        },
+        HttpStatus.EXPECTATION_FAILED,
+      )
+    }
+  }
+
+  async sendSocketMessageToFrontend(message: string) {
+    /** Send socket to Frontend */
+    const io = this.socketService.getIo()
+    io?.emit('message-progress', message)
+  }
+
+  async extractDataNubankEmail(files: Express.Multer.File[]) {
+    await this.deleteCSVFile()
+    if (!files.length) {
+      throw new HttpException(
+        {
+          message: 'Nenhum arquivo foi enviado.',
+        },
+        HttpStatus.EXPECTATION_FAILED,
+      )
+    }
+    if (files.length > 1) {
+      throw new HttpException(
+        {
+          message: 'Só é permitido o envio de apenas 1 arquivo.',
+        },
+        HttpStatus.EXPECTATION_FAILED,
+      )
+    }
     try {
       this.logger.debug(
         '[SISTEMA] - Iniciando a extracao do extrado do nubank...',
       )
-      await readEmailsWithAttachments()
 
-      const dataReadablePositive = await readCSVFiles(true)
-      dataReadablePositive?.forEach(async (extract) => {
-        const hasExtract = await this.nubankModel.findOne({
-          id: extract.Identificador,
-        })
-        if (!hasExtract) {
-          await this.create({
-            dateIn: extract.Data,
-            description: extract['Descrição'],
-            id: extract.Identificador,
-            value: String(extract.Valor),
-          })
-        }
-        await this.cancelThePayment(
-          extract.Valor,
-          extract['Descrição'],
-          extract.Identificador,
-        )
-      })
+      this.sendSocketMessageToFrontend(
+        'Iniciando a extracao do extrado do nubank...',
+      )
 
-      const dataReadableNegative = await readCSVFiles(false)
-      dataReadableNegative?.forEach(async (extract) => {
-        // const hasExtract = await this.expense.findOneIdNubank(
-        //   String(extract.Identificador).trim(),
-        // )
-        await this.expense.removeByIdNubank(
-          String(extract.Identificador).trim(),
-        )
-        const formated = formatPrice(extract.Valor * -1)
-        this.expense.create(
-          {
-            dateIn: extract.Data,
-            expense: extract['Descrição'],
-            maturity: '',
-            status: 'PAGO',
-            value: formated,
-            user: 'NUBANK',
-            idNubank: extract.Identificador,
-          },
-          'NUBANK',
-        )
-        // if (!hasExtract) {}
-      })
-      if (dataReadableNegative?.length) {
-        await this.deleteCSVFile()
-        this.logger.debug('[SISTEMA] - Procedimento finalizado.')
+      const folderPath = path.join('dist', 'Modules', 'files_gmail_nubank')
+      if (!fs.existsSync(folderPath)) {
+        fs.mkdirSync(folderPath, {recursive: true})
       }
+
+      await this.saveFileCsvInFolder(files, folderPath)
+      this.sendSocketMessageToFrontend(
+        'Iniciando o processamento do arquivo, aguarde...',
+      )
+      setTimeout(async () => {
+        try {
+          const dataReadablePositive = await readCSVFiles(true)
+          dataReadablePositive?.forEach(async (extract) => {
+            const hasExtract = await this.nubankModel.findOne({
+              id: extract.Identificador,
+            })
+            if (!hasExtract) {
+              await this.create({
+                dateIn: extract.Data,
+                description: extract['Descrição'],
+                id: extract.Identificador,
+                value: String(extract.Valor),
+              })
+            }
+            await this.cancelThePayment(
+              extract.Valor,
+              extract['Descrição'],
+              extract.Identificador,
+            )
+          })
+
+          const dataReadableNegative = await readCSVFiles(false)
+
+          dataReadableNegative?.forEach(async (extract) => {
+            // const hasExtract = await this.expense.findOneIdNubank(
+            //   String(extract.Identificador).trim(),
+            // )
+            await this.expense.removeByIdNubank(
+              String(extract.Identificador).trim(),
+            )
+
+            const formated = formatPrice(extract.Valor * -1)
+            const match = String(extract['Descrição']).includes('9707453-5')
+
+            this.expense.create(
+              {
+                dateIn: extract.Data,
+                expense: extract['Descrição'],
+                maturity: '',
+                status: 'PAGO',
+                value: formated,
+                user: 'NUBANK',
+                idNubank: extract.Identificador,
+                expense_type: match ? 'Pessoal' : 'Empresa', // Empresa or Pessoal
+              },
+              'NUBANK',
+            )
+            // if (!hasExtract) {}
+          })
+          this.sendSocketMessageToFrontend('Procedimento finalizado.')
+          if (dataReadableNegative?.length) {
+            await this.deleteCSVFile()
+            this.logger.debug('[SISTEMA] - Procedimento finalizado.')
+            this.sendSocketMessageToFrontend('')
+            return {
+              status: HttpStatus.CREATED,
+            }
+          }
+        } catch (err) {
+          this.logger.error(err)
+        }
+      }, 5000)
     } catch (err) {
       this.logger.error(err)
     }
@@ -304,6 +398,8 @@ export class ExtractNubankService implements OnModuleInit {
     const halfAnHour = '0 12 * * *'
     const sixHour = '0 18 * * *'
     const tenHour = '0 22 * * *'
+
+    //await this.extractDataNubankEmail()
 
     // cron.schedule(oneMinuteDevelopment, async () => {
     //   if (isDevelopmentEnvironment()) {

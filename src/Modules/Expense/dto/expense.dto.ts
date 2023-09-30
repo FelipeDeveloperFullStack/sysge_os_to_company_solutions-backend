@@ -7,6 +7,10 @@ export class ExpenselDto {
 
   @IsString()
   @IsOptional()
+  public expense_type?: string
+
+  @IsString()
+  @IsOptional()
   public idNubank: string
 
   @IsString()

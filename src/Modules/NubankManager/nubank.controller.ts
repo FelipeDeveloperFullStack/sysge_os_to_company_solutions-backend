@@ -1,16 +1,16 @@
 import {
-  Body,
   Controller,
   Delete,
   Get,
   Param,
   Post,
-  Put,
   Query,
+  UploadedFiles,
+  UseInterceptors,
 } from '@nestjs/common'
-import {ExtractNubankService} from './nubank.service'
-import {ExtractNubankDto} from './dto/nubank.dto'
+import {FileFieldsInterceptor} from '@nestjs/platform-express'
 import {ExtractNubankFilterDto} from './dto/nubank.filter.dto'
+import {ExtractNubankService} from './nubank.service'
 
 @Controller('nubank')
 export class ExtractNubankController {
@@ -24,5 +24,11 @@ export class ExtractNubankController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.extractNubankService.remove(id)
+  }
+
+  @Post('upload/extract')
+  @UseInterceptors(FileFieldsInterceptor([{name: 'file[]', maxCount: 10}]))
+  async uploadExtract(@UploadedFiles() files: Express.Multer.File[]) {
+    return this.extractNubankService.extractDataNubankEmail(files['file[]'])
   }
 }

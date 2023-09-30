@@ -9,6 +9,9 @@ export class Expense {
   public expense: string
 
   @Prop()
+  public expense_type?: string
+
+  @Prop()
   public idNubank: string
 
   @Prop()

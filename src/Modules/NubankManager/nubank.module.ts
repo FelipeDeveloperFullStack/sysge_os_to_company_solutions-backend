@@ -1,5 +1,6 @@
 import {forwardRef, Module} from '@nestjs/common'
 import {MongooseModule} from '@nestjs/mongoose'
+import {SocketService} from 'src/Socket/socket.service'
 import {ClientsModule} from '../Clients/clients.module'
 import {ConfigurationSystemModule} from '../Configurations/configurations.module'
 import {ExpensesModule} from '../Expense/expenses.module'
@@ -19,7 +20,7 @@ import {ExtractNubankService} from './nubank.service'
     forwardRef(() => ConfigurationSystemModule),
   ],
   controllers: [ExtractNubankController],
-  providers: [ExtractNubankService],
+  providers: [ExtractNubankService, SocketService],
   exports: [ExtractNubankService],
 })
 export class ExtractNubankModule {}

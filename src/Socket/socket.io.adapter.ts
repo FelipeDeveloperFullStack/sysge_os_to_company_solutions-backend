@@ -1,16 +1,14 @@
 import {IoAdapter} from '@nestjs/platform-socket.io'
-import * as socketio from 'socket.io'
 
-export class SocketIOAdapter extends IoAdapter {
-  private static io: socketio.Server
-
-  createIOServer(
-    port: number,
-    options?: socketio.ServerOptions,
-  ): socketio.Server {
-    if (!SocketIOAdapter.io) {
-      SocketIOAdapter.io = super.createIOServer(port, options)
-    }
-    return SocketIOAdapter.io
+export class CustomIoAdapter extends IoAdapter {
+  constructor(private readonly server: any) {
+    super(server)
   }
+
+  // Método para enviar uma mensagem para um cliente específico
+  sendToClient(clientId: string, event: string, data: any) {
+    this.server.to(clientId).emit(event, data)
+  }
+
+  // Outros métodos personalizados conforme necessário
 }
