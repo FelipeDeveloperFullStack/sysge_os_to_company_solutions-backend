@@ -604,12 +604,18 @@ export class ServiceService {
 
   async update(id: string, updateServiceDto: ServiceDto) {
     try {
+      const orderService = await this.serviceModel.findOne({_id: id})
       if (updateServiceDto.status === 'PAGO') {
-        const orderService = await this.serviceModel.findOne({_id: id})
         await this.deleteFileByOrderNumber(orderService.osNumber)
         updateServiceDto = {
           ...updateServiceDto,
           isBoletoUploaded: false,
+        }
+      }
+      if (orderService?.osNumber) {
+        updateServiceDto = {
+          ...updateServiceDto,
+          description: null,
         }
       }
       await this.serviceModel.updateOne(
@@ -632,6 +638,7 @@ export class ServiceService {
       )
     }
   }
+
   async updateStatusSendEmailSchedule(
     id: string,
     isSendThreeDayMaturityBoleto: boolean,
