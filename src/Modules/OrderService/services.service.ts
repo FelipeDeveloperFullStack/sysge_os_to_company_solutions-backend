@@ -7,11 +7,14 @@ import * as os from 'os'
 import * as path from 'path'
 import {isDevelopmentEnvironment} from 'src/Common/Functions'
 import clearSpecialCharacters from 'src/Common/Helpers/clearSpecialCharacters'
+import {getCurrentDateFormatted} from 'src/Common/Helpers/currentDateFormatted'
 import {removeAccents} from 'src/Common/Helpers/fileNameToDelete'
 import {formatInputPrice} from 'src/Common/Helpers/formatPrice'
 import {SocketService} from 'src/Socket/socket.service'
 import {ClientsService} from '../Clients/clients.service'
 import {ConfigurationSystemService} from '../Configurations/configurations.service'
+import {ExpenselDto} from '../Expense/dto/expense.dto'
+import {ExpenseService} from '../Expense/expenses.service'
 import {DocumentChangeStatusDto} from './dto/documentChangeStatus.dto'
 import {ServiceDto} from './dto/service.dto'
 import {ServiceFilterDto} from './dto/service.filter.dto'
@@ -43,6 +46,7 @@ export class ServiceService {
     private readonly socketService: SocketService,
     private readonly clientsService: ClientsService,
     private readonly configurationSystemService: ConfigurationSystemService,
+    private readonly expense: ExpenseService,
   ) {}
 
   async create(createServiceDto: ServiceDto, user: string) {
@@ -55,6 +59,30 @@ export class ServiceService {
       description: createServiceDto?.description || '',
     }
     const service = new this.serviceModel(createServiceDto)
+
+    if (createServiceDto?.isLaunchMoney === false) {
+      const expenseData: ExpenselDto = {
+        dateIn: getCurrentDateFormatted(),
+        expense:
+          createServiceDto?.description || createServiceDto?.client?.name,
+        idNubank: null,
+        maturity: createServiceDto?.maturityOfTheBoleto || null,
+        status: createServiceDto.status === 'PENDENTE' ? 'A PAGAR' : 'PAGO',
+        user: createServiceDto?.user,
+        value: createServiceDto.total,
+        expense_type: 'Empresa',
+      }
+      this.logger.log('[Sistema] - Salvando dados em despesa...')
+      try {
+        this.expense.create(expenseData, 'SISTEMA')
+        this.logger.log('[Sistema] - Salvo com sucesso...')
+      } catch (err) {
+        this.logger.error(
+          'Houve um erro ao tentar salvar os dados em despesa',
+          err,
+        )
+      }
+    }
 
     try {
       service.save()
@@ -610,6 +638,29 @@ export class ServiceService {
         updateServiceDto = {
           ...updateServiceDto,
           isBoletoUploaded: false,
+        }
+      }
+      if (updateServiceDto?.isLaunchMoney === false) {
+        const expenseData: ExpenselDto = {
+          dateIn: getCurrentDateFormatted(),
+          expense:
+            updateServiceDto?.description || updateServiceDto?.client?.name,
+          idNubank: null,
+          maturity: updateServiceDto?.maturityOfTheBoleto || null,
+          status: updateServiceDto.status === 'PENDENTE' ? 'A PAGAR' : 'PAGO',
+          user: updateServiceDto?.user,
+          value: updateServiceDto.total,
+          expense_type: 'Empresa',
+        }
+        this.logger.log('[Sistema] - Salvando dados em despesa...')
+        try {
+          this.expense.create(expenseData, 'SISTEMA')
+          this.logger.log('[Sistema] - Salvo com sucesso...')
+        } catch (err) {
+          this.logger.error(
+            'Houve um erro ao tentar salvar os dados em despesa',
+            err,
+          )
         }
       }
       if (orderService?.osNumber) {

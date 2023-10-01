@@ -115,7 +115,9 @@ export class ExpenseService {
         {
           $set: {
             user,
-            status: String(dto.status).toUpperCase(),
+            ...dto,
+            status: dto?.status && String(dto?.status).toUpperCase(),
+            expense_type: dto?.expense_type && dto?.expense_type,
           },
         },
       )

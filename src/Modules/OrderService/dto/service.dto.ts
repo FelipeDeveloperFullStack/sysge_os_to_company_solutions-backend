@@ -7,6 +7,10 @@ export class ServiceDto {
   public status: string
 
   @IsOptional()
+  @IsBoolean()
+  public isLaunchMoney?: boolean
+
+  @IsOptional()
   @IsString()
   public description?: string
 

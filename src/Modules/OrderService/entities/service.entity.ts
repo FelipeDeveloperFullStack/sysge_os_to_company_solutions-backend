@@ -41,6 +41,9 @@ export class OrderService {
   public status: string
 
   @Prop()
+  public isLaunchMoney?: boolean
+
+  @Prop()
   public description?: string
 
   @Prop()
