@@ -346,9 +346,9 @@ export class ExtractNubankService implements OnModuleInit {
             // const hasExtract = await this.expense.findOneIdNubank(
             //   String(extract.Identificador).trim(),
             // )
-            await this.expense.removeByIdNubank(
-              String(extract.Identificador).trim(),
-            )
+            // await this.expense.removeByIdNubank(
+            //   String(extract.Identificador).trim(),
+            // )
 
             const formated = formatPrice(extract.Valor * -1)
             const match = String(extract['Descrição']).includes('9707453-5')
