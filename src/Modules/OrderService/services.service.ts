@@ -62,9 +62,10 @@ export class ServiceService {
 
     if (createServiceDto?.isLaunchMoney === false) {
       const expenseData: ExpenselDto = {
-        dateIn: getCurrentDateFormatted(),
-        expense:
-          createServiceDto?.description || createServiceDto?.client?.name,
+        dateIn: getCurrentDateFormatted(), //
+        expense: `[AJUSTE NAO DEPOSITADO EM CONTA] - ${
+          createServiceDto?.description || createServiceDto?.client?.name
+        }`,
         idNubank: null,
         maturity: createServiceDto?.maturityOfTheBoleto || null,
         status: createServiceDto.status === 'PENDENTE' ? 'A PAGAR' : 'PAGO',
@@ -643,8 +644,9 @@ export class ServiceService {
       if (updateServiceDto?.isLaunchMoney === false) {
         const expenseData: ExpenselDto = {
           dateIn: getCurrentDateFormatted(),
-          expense:
-            updateServiceDto?.description || updateServiceDto?.client?.name,
+          expense: `[AJUSTE NAO DEPOSITADO EM CONTA] - ${
+            updateServiceDto?.description || updateServiceDto?.client?.name
+          }`,
           idNubank: null,
           maturity: updateServiceDto?.maturityOfTheBoleto || null,
           status: updateServiceDto.status === 'PENDENTE' ? 'A PAGAR' : 'PAGO',
