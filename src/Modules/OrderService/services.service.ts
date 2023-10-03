@@ -1,6 +1,7 @@
 import {HttpException, HttpStatus, Injectable, Logger} from '@nestjs/common'
 import {InjectModel} from '@nestjs/mongoose'
 import {addDays, format, isWithinInterval, parse} from 'date-fns'
+import {ptBR} from 'date-fns/locale'
 import * as fs from 'fs'
 import {Model} from 'mongoose'
 import * as os from 'os'
@@ -10,6 +11,7 @@ import clearSpecialCharacters from 'src/Common/Helpers/clearSpecialCharacters'
 import {getCurrentDateFormatted} from 'src/Common/Helpers/currentDateFormatted'
 import {removeAccents} from 'src/Common/Helpers/fileNameToDelete'
 import {formatInputPrice} from 'src/Common/Helpers/formatPrice'
+import {getMonthAbbreviation} from 'src/Common/Helpers/monthCurrentAbbreviation'
 import {SocketService} from 'src/Socket/socket.service'
 import {ClientsService} from '../Clients/clients.service'
 import {ConfigurationSystemService} from '../Configurations/configurations.service'
@@ -591,6 +593,43 @@ export class ServiceService {
   async getTotalOrderService() {
     const result = await this.serviceModel.find()
     return {total: result?.length}
+  }
+
+  async getTotalProftMonth() {
+    const resultExpense = await this.expense.findAll()
+    const currentMonthAbbreviation = getMonthAbbreviation()
+
+    const totalExpenseEmpresa = resultExpense.reduce((acc, item) => {
+      const dateExpenseIn = parse(item.dateIn, 'dd/MM/yyyy', new Date())
+      const formatedMonth = format(dateExpenseIn, 'MMM', {locale: ptBR})
+      if (formatedMonth === currentMonthAbbreviation) {
+        const {clean} = formatInputPrice(item?.value)
+        if (item.status === 'PAGO' && item?.expense_type === 'Empresa') {
+          return acc + clean
+        } else {
+          return acc
+        }
+      } else {
+        return acc
+      }
+    }, 0)
+    const resultIncome = await this.serviceModel.find()
+    const totalIncome = resultIncome.reduce((acc, item) => {
+      const dateIncomeIn = parse(item.dateOS, 'dd/MM/yyyy', new Date())
+      const formatedMonth = format(dateIncomeIn, 'MMM', {locale: ptBR})
+      const {clean} = formatInputPrice(item?.total)
+      if (formatedMonth === currentMonthAbbreviation) {
+        if (item.status === 'PAGO') {
+          return acc + clean
+        } else {
+          return acc
+        }
+      } else {
+        return acc
+      }
+    }, 0)
+
+    return {totalProfitMonth: totalIncome - totalExpenseEmpresa}
   }
 
   async getSumTotalIncomes() {

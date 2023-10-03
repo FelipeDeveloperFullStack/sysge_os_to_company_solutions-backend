@@ -1,8 +1,11 @@
 import {HttpException, HttpStatus, Injectable} from '@nestjs/common'
 import {InjectModel} from '@nestjs/mongoose'
-import {addDays, isBefore, isWithinInterval, parse} from 'date-fns'
+import {addDays, format, isBefore, isWithinInterval, parse} from 'date-fns'
+import {ptBR} from 'date-fns/locale'
 import {Model} from 'mongoose'
 import {formatInputPrice} from 'src/Common/Helpers/formatPrice'
+import {getMonthAbbreviation} from 'src/Common/Helpers/monthCurrentAbbreviation'
+import {getMonthCurrentFormated} from 'src/Common/Helpers/monthCurrentFormated'
 import {ExpenselDto} from './dto/expense.dto'
 import {ExpenseFilterDto} from './dto/expense.filter.dto'
 import {Expense as _Model, ModelDocument} from './entities/expense.entity'
@@ -51,6 +54,47 @@ export class ExpenseService {
     return {total: total}
   }
 
+  async getSumTotalExpenseType() {
+    const resultExpense = await this.expenseModel.find()
+    const currentMonthAbbreviation = getMonthAbbreviation()
+
+    const totalExpenseEmpresa = resultExpense.reduce((acc, item) => {
+      const dateExpenseIn = parse(item.dateIn, 'dd/MM/yyyy', new Date())
+      const formatedMonth = format(dateExpenseIn, 'MMM', {locale: ptBR})
+      if (formatedMonth === currentMonthAbbreviation) {
+        const {clean} = formatInputPrice(item?.value)
+        if (item.status === 'PAGO' && item?.expense_type === 'Empresa') {
+          return acc + clean
+        } else {
+          return acc
+        }
+      } else {
+        return acc
+      }
+    }, 0)
+
+    const totalExpensePessoal = resultExpense.reduce((acc, item) => {
+      const dateExpenseIn = parse(item.dateIn, 'dd/MM/yyyy', new Date())
+      const formatedMonth = format(dateExpenseIn, 'MMM', {locale: ptBR})
+      if (formatedMonth === currentMonthAbbreviation) {
+        const {clean} = formatInputPrice(item?.value)
+        if (item.status === 'PAGO' && item?.expense_type === 'Pessoal') {
+          return acc + clean
+        } else {
+          return acc
+        }
+      } else {
+        return acc
+      }
+    }, 0)
+
+    return {
+      totalExpenseEmpresa,
+      totalExpensePessoal,
+      month: getMonthCurrentFormated(),
+    }
+  }
+
   async findAll(filter?: ExpenseFilterDto) {
     // if (filter) {
     //   const service = {
@@ -79,11 +123,13 @@ export class ExpenseService {
   async findAllPersonalExpense() {
     const resultExpense = await this.expenseModel.find()
 
-    const regexConta = /CONTA:\s*9707453-5/g
+    // const regexConta = /CONTA:\s*9707453-5/g
+    const expenseType = 'Pessoal'
     let totalSum = 0
     const expenseList = []
     resultExpense.forEach((expense) => {
-      const match = expense.expense.match(regexConta)
+      // const match = expense.expense.match(regexConta)
+      const match = expense?.expense_type?.trim() === expenseType
       if (match) {
         const {clean} = formatInputPrice(expense.value)
         totalSum += clean

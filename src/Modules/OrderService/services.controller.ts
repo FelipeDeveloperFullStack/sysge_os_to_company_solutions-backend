@@ -89,6 +89,11 @@ export class ServiceController {
     return this.serviceService.getSumTotalIncomes()
   }
 
+  @Get('total/profit-month')
+  getTotalProftMonth() {
+    return this.serviceService.getTotalProftMonth()
+  }
+
   @Get('total/orcamentos')
   getTotalOrcamentos() {
     return this.serviceService.getSumTotalOrcamento()
