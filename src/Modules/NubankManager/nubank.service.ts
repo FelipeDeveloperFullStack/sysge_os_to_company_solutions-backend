@@ -159,17 +159,23 @@ export class ExtractNubankService implements OnModuleInit {
     resultOrderService: any[],
     totalValueIncomeExtract: number,
     idExtractIncome: string,
+    dateIn: string,
   ) {
     try {
       const resultOrderServiceSystem = resultOrderService.filter((item) => {
         const {clean} = formatInputPrice(item?.total)
         if (item.status === 'PENDENTE' && clean === totalValueIncomeExtract) {
+          console.log({item, clientId, totalValueIncomeExtract, clean})
           if (item.client.id === clientId) {
             return item
           }
         }
       })
       const resultOSFiltered = await this.getOldestOS(resultOrderServiceSystem)
+      console.log({
+        resultOrderService: resultOrderService.length,
+        resultOSFilteredTotal: resultOSFiltered.length,
+      })
       resultOSFiltered.forEach(
         async (item: {
           id: string
@@ -180,7 +186,9 @@ export class ExtractNubankService implements OnModuleInit {
           try {
             const serviceDto: ServiceDto = {
               status: 'PAGO',
+              dateClientPayment: dateIn,
             } as ServiceDto
+            console.log({dateIn})
             await this.orderService.update(item?.id, serviceDto)
 
             await this.updateIncomeDownloaded(idExtractIncome, true)
@@ -195,13 +203,16 @@ export class ExtractNubankService implements OnModuleInit {
           }
         },
       )
-    } catch (error) {}
+    } catch (error) {
+      this.logger.error(error)
+    }
   }
 
   async cancelThePayment(
     totalValueIncomeExtract: number,
     description: string,
     idExtractIncome: string,
+    dateIn: string,
   ) {
     const hasIncomeDownloaded = await this.findOne(idExtractIncome)
 
@@ -212,11 +223,13 @@ export class ExtractNubankService implements OnModuleInit {
         const resultClient = await this.client.findCpfOrCnpj(cpf || cnpj)
         const clientId = resultClient?.id
         if (clientId) {
+          console.log({clientId})
           await this.updateStatusOrderServiceAndSendMessageWhatsapp(
             clientId,
             resultOrderService,
             totalValueIncomeExtract,
             idExtractIncome,
+            dateIn,
           )
         }
       } else if (name) {
@@ -229,6 +242,7 @@ export class ExtractNubankService implements OnModuleInit {
             resultOrderService,
             totalValueIncomeExtract,
             idExtractIncome,
+            dateIn,
           )
         }
       }
@@ -337,6 +351,7 @@ export class ExtractNubankService implements OnModuleInit {
               extract.Valor,
               extract['Descrição'],
               extract.Identificador,
+              extract.Data,
             )
           })
 
