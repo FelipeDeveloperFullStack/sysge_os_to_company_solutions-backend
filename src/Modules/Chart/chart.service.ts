@@ -105,12 +105,16 @@ export class ChartService {
 
     resultOrderService.forEach((orderService) => {
       const orderServiceYear = parse(
-        orderService.dateOS,
+        orderService?.dateClientPayment || orderService.dateOS,
         'dd/MM/yyyy',
         new Date(),
       ).getFullYear()
       if (orderService.status === 'PAGO' && orderServiceYear === currentYear) {
-        const dateOS = parse(orderService.dateOS, 'dd/MM/yyyy', new Date())
+        const dateOS = parse(
+          orderService.dateClientPayment || orderService.dateOS,
+          'dd/MM/yyyy',
+          new Date(),
+        )
         const formatedMonth = format(dateOS, 'MMM', {locale: ptBR})
         const {clean} = formatInputPrice(orderService.total)
         if (totalMonth[formatedMonth]) {

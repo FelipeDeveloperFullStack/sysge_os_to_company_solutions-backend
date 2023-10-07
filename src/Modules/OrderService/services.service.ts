@@ -615,7 +615,11 @@ export class ServiceService {
     }, 0)
     const resultIncome = await this.serviceModel.find()
     const totalIncome = resultIncome.reduce((acc, item) => {
-      const dateIncomeIn = parse(item.dateOS, 'dd/MM/yyyy', new Date())
+      const dateIncomeIn = parse(
+        item?.dateClientPayment || item?.dateOS,
+        'dd/MM/yyyy',
+        new Date(),
+      )
       const formatedMonth = format(dateIncomeIn, 'MMM', {locale: ptBR})
       const {clean} = formatInputPrice(item?.total)
       if (formatedMonth === currentMonthAbbreviation) {

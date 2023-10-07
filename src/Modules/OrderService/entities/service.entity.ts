@@ -56,6 +56,9 @@ export class OrderService {
   public dateOS: string
 
   @Prop()
+  public dateClientPayment: string
+
+  @Prop()
   public dateGeneratedOS: string
 
   @Prop()

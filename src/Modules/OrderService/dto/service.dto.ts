@@ -32,6 +32,10 @@ export class ServiceDto {
 
   @IsOptional()
   @IsString()
+  public dateClientPayment?: string
+
+  @IsOptional()
+  @IsString()
   public dateGeneratedOS: string
 
   @IsOptional()
