@@ -38,6 +38,22 @@ export class ClientsService {
     const isExistName = await this.clientModel.find({
       name: String(createClientDto.name.trim()).toUpperCase(),
     })
+    const isExistSameCPFOrCNPJ = await this.clientModel.find({
+      cpfOrCnpj: String(createClientDto.cpfOrCnpj),
+    })
+    if (createClientDto?.cpfOrCnpj) {
+      if (isExistSameCPFOrCNPJ.length) {
+        throw new HttpException(
+          {
+            message: `Já existe um cliente cadastrado com o CPF/CNPJ ${String(
+              createClientDto.cpfOrCnpj,
+            )}`,
+          },
+          HttpStatus.UNAUTHORIZED,
+        )
+      }
+    }
+
     if (isExistName.length) {
       throw new HttpException(
         {
