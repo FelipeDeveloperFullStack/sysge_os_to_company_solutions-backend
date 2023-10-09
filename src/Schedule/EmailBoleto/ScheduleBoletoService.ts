@@ -1,5 +1,5 @@
 import {Injectable, Logger} from '@nestjs/common'
-import {addDays, format, isWithinInterval, parse} from 'date-fns'
+import {addDays, format, isSameDay, isWithinInterval, parse} from 'date-fns'
 import * as fs from 'fs'
 import * as handlebars from 'handlebars'
 import {DateTime} from 'luxon'
@@ -22,6 +22,7 @@ type FileType = {
 export class ScheduleBoletoService {
   private logger = new Logger()
   private emailTemplate: HandlebarsTemplateDelegate
+  private emailTemplateAfterMaturity: HandlebarsTemplateDelegate
   private transporter: nodemailer.Transporter
 
   constructor(
@@ -35,8 +36,23 @@ export class ScheduleBoletoService {
       'templates',
       'pendingboleto.hbs',
     )
+    const emailTemplateAfterMaturityPath = path.resolve(
+      'dist',
+      'mails',
+      'templates',
+      'emailTemplateAfterMaturity.hbs',
+    )
     const templateContent = fs.readFileSync(templatePath, 'utf8')
+    const templateContentAfterMaturityPath = fs.readFileSync(
+      emailTemplateAfterMaturityPath,
+      'utf8',
+    )
+
     this.emailTemplate = handlebars.compile(templateContent)
+    this.emailTemplateAfterMaturity = handlebars.compile(
+      templateContentAfterMaturityPath,
+    )
+
     this.transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
@@ -95,6 +111,7 @@ export class ScheduleBoletoService {
     pdfAttachment: FileType[],
     osNumber: string,
     total: string,
+    dueDateDaysAfterMaturity?: string,
   ) {
     const gifPath = path.resolve(
       'dist',
@@ -110,35 +127,52 @@ export class ScheduleBoletoService {
           : 'vencerá hoje.'
       }`,
       gif: `data:image/gif;base64,${gifData}`,
+      dueDateDaysAfterMaturity,
+      osNumber,
     }
-    const html = this.emailTemplate(data)
+    const html = dueDateDaysAfterMaturity
+      ? this.emailTemplateAfterMaturity(data)
+      : this.emailTemplate(data)
     setTimeout(async () => {
       this.sendEmail(
         email,
-        'Lembrete Importante: Vencimento do Boleto',
+        `Lembrete Importante: ${
+          dueDateDaysAfterMaturity ? 'Boleto Vencido' : 'Vencimento do Boleto'
+        }`,
         html,
         gifPath,
         pdfAttachment,
         osNumber,
-      )
+      ) //isSendThreeDayAfterMaturityBoleto
       this.orderService.updateStatusSendEmailSchedule(
         osId,
-        days === 3,
-        days < 3,
+        !dueDateDaysAfterMaturity ? days === 3 : true,
+        !dueDateDaysAfterMaturity ? days < 3 : true,
+        !!dueDateDaysAfterMaturity,
       )
       const isCurrentDay = days < 3
-      this.logger.debug(
-        `Enviando e-mail de cobrança para o cliente: ${clientName} - ${
-          isCurrentDay ? 'Vencimento hoje' : 'Vencimento daqui 3 dias'
-        }`,
-      )
+      if (!dueDateDaysAfterMaturity) {
+        this.logger.debug(
+          `Enviando e-mail de cobrança para o cliente: ${clientName} - ${
+            isCurrentDay ? 'Vencimento hoje' : 'Vencimento daqui 3 dias'
+          }`,
+        )
+      } else {
+        this.logger.debug(
+          `Enviando e-mail de cobrança para o cliente: ${clientName} - Boleto Vencido.`,
+        )
+      }
       const message = `📨 Email de notificação de cobrança enviado 📨 \n*Cliente:* ${clientName} \n*OS Nº:* ${osNumber} \n*Tipo de Vencimento:* ${
-        isCurrentDay ? 'Vencimento hoje' : 'Vencimento daqui 3 dias'
+        dueDateDaysAfterMaturity
+          ? 'Boleto Vencido'
+          : isCurrentDay
+          ? 'Vencimento hoje'
+          : 'Vencimento daqui 3 dias'
       } \n*Valor:* ${total}`
-      await this.configurationSystemService.sendMessageGroup(
-        '120363169904240571@g.us',
-        message,
-      )
+      // await this.configurationSystemService.sendMessageGroup(
+      //   '120363169904240571@g.us',
+      //   message,
+      // )
     }, 5000)
   }
 
@@ -182,6 +216,7 @@ export class ScheduleBoletoService {
     clientId: string,
     osNumber: string,
     total: string,
+    dueDateDaysAfterMaturity?: string,
   ) {
     const pdfAttachment = await this.findFileByOrderNumber(osNumber)
     if (pdfAttachment) {
@@ -195,6 +230,7 @@ export class ScheduleBoletoService {
           pdfAttachment,
           osNumber,
           total,
+          dueDateDaysAfterMaturity,
         )
       } else {
         await this.clientService.updateRegisterNotification(clientId, true)
@@ -211,6 +247,7 @@ export class ScheduleBoletoService {
     const currentDay = now.toISO()
 
     const threeDaysFromNowOrDayCurrentNow = addDays(today, 3)
+
     const orderService = await this.orderService.findAllWithoutParam()
     for (let index = 0; index < orderService.length; index++) {
       const orderServiceItem = orderService[index]
@@ -225,6 +262,9 @@ export class ScheduleBoletoService {
         'dd/MM/yyyy',
         new Date(),
       )
+
+      const dueDatePlus3DaysMaturity = addDays(maturityDate, 3)
+
       if (
         String(orderServiceItem.status).trim() === 'PENDENTE' &&
         String(orderServiceItem.formOfPayment).trim() === 'Boleto'
@@ -245,6 +285,19 @@ export class ScheduleBoletoService {
         ) {
           if (!orderServiceItem.isSendThreeDayMaturityBoleto) {
             await this.sendOrUpdate(osId, 3, name, clientId, osNumber, total)
+          }
+        }
+        if (isSameDay(today, dueDatePlus3DaysMaturity)) {
+          if (!orderServiceItem.isSendThreeDayAfterMaturityBoleto) {
+            await this.sendOrUpdate(
+              osId,
+              3,
+              name,
+              clientId,
+              osNumber,
+              total,
+              orderServiceItem.maturityOfTheBoleto,
+            )
           }
         }
       }

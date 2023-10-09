@@ -122,6 +122,10 @@ export class ServiceDto {
 
   @IsOptional()
   @IsBoolean()
+  public isSendThreeDayAfterMaturityBoleto?: boolean
+
+  @IsOptional()
+  @IsBoolean()
   public isSendNowDayMaturityBoleto: boolean
 
   @IsOptional()

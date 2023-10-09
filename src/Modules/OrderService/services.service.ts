@@ -739,6 +739,7 @@ export class ServiceService {
     id: string,
     isSendThreeDayMaturityBoleto: boolean,
     isSendNowDayMaturityBoleto: boolean,
+    isSendThreeDayAfterMaturityBoleto: boolean,
   ) {
     try {
       await this.serviceModel.updateOne(
@@ -749,6 +750,7 @@ export class ServiceService {
           $set: {
             isSendThreeDayMaturityBoleto,
             isSendNowDayMaturityBoleto,
+            isSendThreeDayAfterMaturityBoleto,
           },
         },
       )

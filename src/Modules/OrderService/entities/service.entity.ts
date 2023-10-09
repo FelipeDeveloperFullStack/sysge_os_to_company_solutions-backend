@@ -147,6 +147,9 @@ export class OrderService {
   public isSendThreeDayMaturityBoleto: boolean
 
   @Prop()
+  public isSendThreeDayAfterMaturityBoleto: boolean
+
+  @Prop()
   public isSendNowDayMaturityBoleto: boolean
 
   @Prop()
