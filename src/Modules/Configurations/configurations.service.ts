@@ -132,7 +132,8 @@ export class ConfigurationSystemService {
         token = await this.readTokenFromFile()
       }
       if (isDevelopmentEnvironment()) {
-        ip = '192.168.1.38' // Development virtual machine
+        //ip = getLocalIP() // Development virtual machine
+        ip = getLocalIP()
       } else {
         ip = getLocalIP()
       }
@@ -386,7 +387,7 @@ export class ConfigurationSystemService {
         token = await this.readTokenFromFile()
       }
       if (isDevelopmentEnvironment()) {
-        ip = '192.168.1.38' // Development virtual machine
+        ip = getLocalIP() // Development virtual machine
       } else {
         ip = getLocalIP()
       }
@@ -421,7 +422,7 @@ export class ConfigurationSystemService {
         token = await this.readTokenFromFile()
       }
       if (isDevelopmentEnvironment()) {
-        ip = '192.168.1.38' // Development virtual machine
+        ip = getLocalIP() // Development virtual machine
       } else {
         ip = getLocalIP()
       }
@@ -466,10 +467,10 @@ export class ConfigurationSystemService {
       ip = await this.readIPFromFile()
     }
     if (isDevelopmentEnvironment()) {
-      ip = '192.168.1.38' // Development virtual machine
+      ip = getLocalIP() // Development virtual machine
     }
     if (ip) {
-      // ip = '192.168.1.38'
+      // ip = getLocalIP()
       let instanceName = token?.instanceName
       let jwt = token?.jwt
       try {
@@ -492,11 +493,11 @@ export class ConfigurationSystemService {
       ip = await this.readIPFromFile()
     }
     if (isDevelopmentEnvironment()) {
-      ip = '192.168.1.38' // Development virtual machine
+      ip = getLocalIP() // Development virtual machine
     }
     if (ip) {
       try {
-        // ip = '192.168.1.38'
+        // ip = getLocalIP()
         const jwt = await this.createInstance(ip, instanceName)
         // await this.setInstance(instanceName, ip, jwt)
         await this.writeFileAsync(
