@@ -3,7 +3,7 @@
 /node_modules
 /.wwebjs_auth
 .env
-/secret_google_drive/
+secret_google_drive/credentials_conta_felipe.json
 # Logs
 logs
 *.log
