@@ -1200,7 +1200,7 @@ export class ServiceService {
     filename: string,
   ) {
     const ID_FOLDER_MAIN = isDevelopmentEnvironment()
-      ? process.env.ID_FOLDER_MAIN_GOOGLE_DRIVE_DEVELOPMENT
+      ? process.env.ID_FOLDER_MAIN_GOOGLE_DRIVE
       : process.env.ID_FOLDER_MAIN_GOOGLE_DRIVE
     try {
       this.logger.log(

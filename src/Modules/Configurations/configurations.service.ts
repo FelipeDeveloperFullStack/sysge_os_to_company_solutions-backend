@@ -140,7 +140,7 @@ export class ConfigurationSystemService {
       let instanceName = token?.instanceName
       let jwt = token?.jwt
       const {data} = await axios.post(
-        `http://${ip}:8083/group/create/${instanceName}`,
+        `http://${ip}:8084/group/create/${instanceName}`,
         {
           subject: 'Notificações - Solutions',
           description: 'Notificações do sistema - Solutions',
@@ -189,9 +189,10 @@ export class ConfigurationSystemService {
   async createInstance(ip: string, instanceName: string) {
     try {
       const {data} = await axios.post(
-        `http://${ip}:8083/instance/create`,
+        `http://${ip}:8084/instance/create`,
         {
           instanceName,
+          description: instanceName
         },
         {
           headers: {
@@ -199,8 +200,11 @@ export class ConfigurationSystemService {
           },
         },
       )
-      return data?.hash?.jwt
+      
+      //return data?.hash?.jwt
+        return data?.Auth?.token
     } catch (error) {
+      console.log(error)
       throw error
     }
   }
@@ -208,7 +212,7 @@ export class ConfigurationSystemService {
   async getConnectionStatus(ip: string, instanceName: string, jwt: string) {
     try {
       const {data} = await axios.get(
-        `http://${ip}:8083/instance/connectionState/${instanceName}`,
+        `http://${ip}:8084/instance/connectionState/${instanceName}`,
         {
           headers: {
             Authorization: `Bearer ${jwt}`,
@@ -223,7 +227,7 @@ export class ConfigurationSystemService {
 
   async getQrCode(ip: string, instanceName: string, jwt: string) {
     try {
-      await axios.get(`http://${ip}:8083/instance/connect/${instanceName}`, {
+      await axios.get(`http://${ip}:8084/instance/connect/${instanceName}`, {
         headers: {
           Authorization: `Bearer ${jwt}`,
         },
@@ -235,7 +239,7 @@ export class ConfigurationSystemService {
   // async setInstance(instanceName: string, ip: string, jwt: string) {
   //   try {
   //     await axios.post(
-  //       `http://${ip}:8083/webhook/set/${instanceName}`,
+  //       `http://${ip}:8084/webhook/set/${instanceName}`,
   //       {
   //         enabled: true,
   //         url: `http://${ip}:3005/configurations`,
@@ -310,7 +314,7 @@ export class ConfigurationSystemService {
   ) {
     try {
       await axios.post(
-        `http://${ip}:8083/message/sendText/${instanceName}`,
+        `http://${ip}:8084/message/sendText/${instanceName}`,
         {
           number: phoneNumber,
           textMessage: {
@@ -360,7 +364,7 @@ export class ConfigurationSystemService {
       formData.append('delay', '1500')
 
       await axios.post(
-        `http://${ip}:8083/message/sendMediaFile/${instanceName}`,
+        `http://${ip}:8084/message/sendMediaFile/${instanceName}`,
         formData,
         {
           headers: {
@@ -394,7 +398,7 @@ export class ConfigurationSystemService {
       let instanceName = token?.instanceName
       let jwt = token?.jwt
       await axios.post(
-        `http://${ip}:8083/message/sendText/${instanceName}`,
+        `http://${ip}:8084/message/sendText/${instanceName}`,
         {
           number: idGroup,
           textMessage: {
@@ -429,25 +433,34 @@ export class ConfigurationSystemService {
       let instanceName = token?.instanceName
       let jwt = token?.jwt
       const files = await this.findFileByOrderNumber(osNumber)
-      await this.sendTextToWhatsapp(
-        phoneNumber,
-        ip,
-        instanceName,
-        jwt,
-        osNumber,
-      )
-      files.forEach(async (file) => {
-        await this.sendAttachmentToWhatsappClientNumber(
+      try {
+        await this.sendTextToWhatsapp(
           phoneNumber,
-          instanceName,
           ip,
+          instanceName,
           jwt,
-          file.fileName,
-          file.base64,
+          osNumber,
         )
+      } catch (error) {
+        console.log('Erro ao enviar texto: ', error)
+      }
+      files.forEach(async (file) => {
+        try {
+          await this.sendAttachmentToWhatsappClientNumber(
+            phoneNumber,
+            instanceName,
+            ip,
+            jwt,
+            file.fileName,
+            file.base64,
+          )
+        } catch (error) {
+          console.log('Erro ao enviar anexo', error)
+        }
       })
       return 'File sended with successfully'
     } catch (error) {
+      //console.log(error)
       throw new HttpException(
         {
           message: error,

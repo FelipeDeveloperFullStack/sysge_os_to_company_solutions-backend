@@ -369,9 +369,14 @@ export class ClientsService {
   async createDirectoryClientGoogleDrive(
     client: ClientDto,
     idClientCreated: string,
-  ) {
-    const ID_FOLDER_MAIN = isDevelopmentEnvironment()
+  ) {/**
+   * 
+  const ID_FOLDER_MAIN = isDevelopmentEnvironment()
       ? process.env.ID_FOLDER_MAIN_GOOGLE_DRIVE_DEVELOPMENT
+      : process.env.ID_FOLDER_MAIN_GOOGLE_DRIVE
+   */
+      const ID_FOLDER_MAIN = isDevelopmentEnvironment()
+      ? process.env.ID_FOLDER_MAIN_GOOGLE_DRIVE
       : process.env.ID_FOLDER_MAIN_GOOGLE_DRIVE
     try {
       this.logger.log(
