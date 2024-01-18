@@ -16,6 +16,7 @@ import {
   ConfigurationSystem,
   ConfigurationSystemDocument,
 } from './entities/configurations.entity'
+import { getPublicIP } from 'src/Common/Helpers/publicIP'
 
 type MimeType =
   | 'text/plain'
@@ -428,7 +429,7 @@ export class ConfigurationSystemService {
       if (isDevelopmentEnvironment()) {
         ip = getLocalIP() // Development virtual machine
       } else {
-        ip = getLocalIP()
+        ip = await getPublicIP()
       }
       let instanceName = token?.instanceName
       let jwt = token?.jwt
