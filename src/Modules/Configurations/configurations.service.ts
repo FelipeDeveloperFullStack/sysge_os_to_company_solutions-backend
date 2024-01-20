@@ -429,7 +429,8 @@ export class ConfigurationSystemService {
       if (isDevelopmentEnvironment()) {
         ip = getLocalIP() // Development virtual machine
       } else {
-        ip = await getPublicIP()
+        //ip = await getPublicIP()
+        ip = 'localhost'
       }
       let instanceName = token?.instanceName
       let jwt = token?.jwt
