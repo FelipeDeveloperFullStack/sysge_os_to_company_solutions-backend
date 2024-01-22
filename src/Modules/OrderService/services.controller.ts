@@ -19,6 +19,7 @@ import {ServiceDto} from './dto/service.dto'
 import {ServiceFilterDto} from './dto/service.filter.dto'
 import {ServicePartialPaymentDto} from './dto/service.partial.payment.dto'
 import {ServiceService} from './services.service'
+import clearSpecialCharacters from 'src/Common/Helpers/clearSpecialCharacters'
 
 interface DeleteFileByName {
   fileName: string
@@ -31,6 +32,19 @@ export class ServiceController {
   @Post()
   create(@Body() createServiceDto: ServiceDto, @Headers('user') user: string) {
     return this.serviceService.create(createServiceDto, user)
+  }
+
+  @Post('sendNotificationWhatsappToClient')
+  sendNotificationWhatsappToClient(
+    @Body() dto: ServiceDto,
+    @Headers('user') user: string,
+  ) {
+    return this.serviceService.sendNotificationWhatsappToClient(
+      `55${clearSpecialCharacters(dto?.client?.phoneNumber)}`,
+      dto?.osNumber,
+      true,
+      dto?.client?.id
+    )
   }
 
   @Put('partial/payment')

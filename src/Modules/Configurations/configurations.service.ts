@@ -16,7 +16,7 @@ import {
   ConfigurationSystem,
   ConfigurationSystemDocument,
 } from './entities/configurations.entity'
-import { getPublicIP } from 'src/Common/Helpers/publicIP'
+import {getPublicIP} from 'src/Common/Helpers/publicIP'
 
 type MimeType =
   | 'text/plain'
@@ -48,6 +48,109 @@ export class ConfigurationSystemService {
     private configurationSystemModel: Model<ConfigurationSystemDocument>,
     private readonly socketService: SocketService,
   ) {}
+
+  async defineWebhook(data: any) {
+    try {
+      let token = undefined
+      let ip = undefined
+      let instanceName = undefined
+      let jwt = undefined
+      ip = getLocalIP()
+      if (fs.existsSync('token_whatsapp.json')) {
+        token = await this.readTokenFromFile()
+        instanceName = token?.instanceName
+        jwt = token?.jwt
+      } else {
+        instanceName = String(Math.random())
+        jwt = await this.createInstance(ip, instanceName)
+        await this.writeFileAsync(
+          'token_whatsapp.json',
+          JSON.stringify({jwt, instanceName}),
+        )
+      }
+      await axios.put(
+        `http://${ip}:8084/webhook/set/${instanceName}`,
+        {
+          enabled: true,
+          url: `http://${data.publicIP}:3005/configurations`,
+          events: {
+            qrcodeUpdated: true,
+            messagesSet: false,
+            messagesUpsert: true,
+            messagesUpdated: true,
+            sendMessage: true,
+            contactsSet: true,
+            contactsUpsert: true,
+            contactsUpdated: true,
+            chatsSet: false,
+            chatsUpsert: true,
+            chatsUpdated: true,
+            chatsDeleted: true,
+            presenceUpdated: true,
+            groupsUpsert: false,
+            groupsUpdated: false,
+            groupsParticipantsUpdated: false,
+            connectionUpdated: true,
+            statusInstance: true,
+            refreshToken: true,
+          },
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${jwt}`,
+          },
+        },
+      )
+      return {message: 'Webhook adicionado com sucesso.', status: 200}
+    } catch (error) {
+      throw new HttpException(
+        {
+          message: error,
+        },
+        HttpStatus.EXPECTATION_FAILED,
+      )
+    }
+  }
+  async getStatusWebhook() {
+    try {
+      let token = undefined
+      let ip = undefined
+      let jwt = undefined
+      let instanceName = undefined
+      ip = getLocalIP()
+
+      if (fs.existsSync('token_whatsapp.json')) {
+        token = await this.readTokenFromFile()
+        instanceName = token?.instanceName
+        jwt = token?.jwt
+      } else {
+        instanceName = String(Math.random())
+        jwt = await this.createInstance(ip, instanceName)
+        await this.writeFileAsync(
+          'token_whatsapp.json',
+          JSON.stringify({jwt, instanceName}),
+        )
+      }
+
+      const {data} = await axios.get(
+        `http://${ip}:8084/webhook/find/${instanceName}`,
+        {
+          headers: {
+            Authorization: `Bearer ${jwt}`,
+          },
+        },
+      )
+      if (!data) return {message: 'Nenhum webhook configurado', status: 404}
+      return data
+    } catch (error) {
+      throw new HttpException(
+        {
+          message: error,
+        },
+        HttpStatus.EXPECTATION_FAILED,
+      )
+    }
+  }
 
   async webhook(response: any) {
     if (response?.event === QRCODE_UPDATED) {
@@ -193,7 +296,7 @@ export class ConfigurationSystemService {
         `http://${ip}:8084/instance/create`,
         {
           instanceName,
-          description: instanceName
+          description: instanceName,
         },
         {
           headers: {
@@ -201,9 +304,9 @@ export class ConfigurationSystemService {
           },
         },
       )
-      
+
       //return data?.hash?.jwt
-        return data?.Auth?.token
+      return data?.Auth?.token
     } catch (error) {
       console.log(error)
       throw error
@@ -312,14 +415,33 @@ export class ConfigurationSystemService {
     instanceName: string,
     jwt: string,
     osNumber: string,
+    isResendNotification?: boolean,
+    osNumberToResendNotification?: string[],
   ) {
     try {
+
+      const osPending = osNumberToResendNotification.filter((item) => item !== osNumber)
+
+      const getMessagePendingNotification = () => {
+        if (osPending.length > 1) {
+          return `${getGreeting()}\n\nEstamos enviando esta notificação via Whatsapp para lembrá-lo de que o boleto referente à ordem de serviço de número *${osNumber}* foi gerado.\n\nAgradecemos sua atenção e pontualidade. ${!!osPending?.length ? `\n\n*Além disso, informamos que ainda existem as ordens de serviço de número ${osPending.join(
+            ',',
+          )} pendentes para pagamento.*` : ''}\n\nQualquer dúvida, estamos à disposição.\n\nCaso o boleto já esteja pago, por favor, desconsidere essa mensagem.\n\nAtenciosamente.`
+        } else {
+          return `${getGreeting()}\n\nEstamos enviando esta notificação via Whatsapp para lembrá-lo de que o boleto referente à ordem de serviço de número *${osNumber}* foi gerado.\n\nAgradecemos sua atenção e pontualidade. ${!!osPending?.length ? `\n\n*Além disso, informamos que ainda existem a orden de serviço de número ${osPending.join(
+            ',',
+          )} pendente para pagamento.*` : ''}\n\nQualquer dúvida, estamos à disposição.\n\nCaso o boleto já esteja pago, por favor, desconsidere essa mensagem.\n\nAtenciosamente.`
+        }
+       }
+
       await axios.post(
         `http://${ip}:8084/message/sendText/${instanceName}`,
         {
           number: phoneNumber,
           textMessage: {
-            text: `${getGreeting()}\n\nEstamos enviando esta notificação via Whatsapp para lembrá-lo de que o boleto referente à ordem de serviço de número *${osNumber}* foi gerado.\n\nAgradecemos sua atenção e pontualidade.\nQualquer dúvida, estamos à disposição.\nCaso o boleto já esteja pago, por favor, desconsidere este essa mensagem.\n\nAtenciosamente.`,
+            text: !isResendNotification
+              ? `${getGreeting()}\n\nEstamos enviando esta notificação via Whatsapp para lembrá-lo de que o boleto referente à ordem de serviço de número *${osNumber}* foi gerado.\n\nAgradecemos sua atenção e pontualidade.\nQualquer dúvida, estamos à disposição.\nCaso o boleto já esteja pago, por favor, desconsidere essa mensagem.\n\nAtenciosamente.`
+              : getMessagePendingNotification()
           },
           options: {
             delay: 0,
@@ -419,7 +541,12 @@ export class ConfigurationSystemService {
     } catch (error) {}
   }
 
-  async sendMidia(phoneNumber?: string, osNumber?: string) {
+  async sendMidia(
+    phoneNumber?: string,
+    osNumber?: string,
+    isResendNotification?: boolean,
+    osNumberToResendNotification?: string[],
+  ) {
     try {
       let token = undefined
       let ip = undefined
@@ -442,6 +569,8 @@ export class ConfigurationSystemService {
           instanceName,
           jwt,
           osNumber,
+          isResendNotification,
+          osNumberToResendNotification,
         )
       } catch (error) {
         console.log('Erro ao enviar texto: ', error)
@@ -503,22 +632,38 @@ export class ConfigurationSystemService {
 
   async connectWhatsapp() {
     let ip = undefined
-    const instanceName = String(Math.random())
+    let token = undefined
+    let jwt = undefined
+    let instanceName = undefined
+    ip = getLocalIP()
+
     if (fs.existsSync('ip.json')) {
       ip = await this.readIPFromFile()
     }
-    if (isDevelopmentEnvironment()) {
-      ip = getLocalIP() // Development virtual machine
+    // if (isDevelopmentEnvironment()) {
+    //   ip = getLocalIP() // Development virtual machine
+    // }
+    if (fs.existsSync('token_whatsapp.json')) {
+      token = await this.readTokenFromFile()
+      instanceName = token?.instanceName
+      jwt = token?.jwt
+    } else {
+      instanceName = String(Math.random())
+      jwt = await this.createInstance(ip, instanceName)
+      await this.writeFileAsync(
+        'token_whatsapp.json',
+        JSON.stringify({jwt, instanceName}),
+      )
     }
     if (ip) {
       try {
         // ip = getLocalIP()
-        const jwt = await this.createInstance(ip, instanceName)
+        //const jwt = await this.createInstance(ip, instanceName)
         // await this.setInstance(instanceName, ip, jwt)
-        await this.writeFileAsync(
-          'token_whatsapp.json',
-          JSON.stringify({jwt, instanceName}),
-        )
+        // await this.writeFileAsync(
+        //   'token_whatsapp.json',
+        //   JSON.stringify({jwt, instanceName}),
+        // )
         await this.getQrCode(ip, instanceName, jwt)
       } catch (error) {
         throw new HttpException(

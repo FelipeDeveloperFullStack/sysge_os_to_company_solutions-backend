@@ -135,4 +135,5 @@ export class ServiceDto {
   @IsOptional()
   @IsBoolean()
   public isPartial?: boolean
+
 }

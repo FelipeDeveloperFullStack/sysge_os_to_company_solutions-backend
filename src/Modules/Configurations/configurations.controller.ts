@@ -45,4 +45,14 @@ export class ConfigurationSystemController {
   webhook(@Body() dataWebHookResponse: any) {
     return this.confiService.webhook(dataWebHookResponse)
   }
+
+  @Get('status/webhook')
+  getStatusWebhook() {
+    return this.confiService.getStatusWebhook()
+  }
+
+  @Put('webhook/defineWebhook')
+  defineWebhook(@Body() publicIP: any) {
+    return this.confiService.defineWebhook(publicIP)
+  }
 }

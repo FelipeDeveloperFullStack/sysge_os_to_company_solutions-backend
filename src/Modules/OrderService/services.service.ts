@@ -208,6 +208,56 @@ export class ServiceService {
     return await this.serviceModel.find()
   }
 
+  async sendNotificationWhatsappToClient(
+    phoneNumber: string,
+    osNumber: string,
+    isResendNotification?: boolean,
+    clientId?: string
+  ) {
+
+    let osNumberToResendNotification: string[] = []
+
+    if (isResendNotification) {
+      osNumberToResendNotification = await this.getPendingOSNumber(clientId)
+    }
+
+    try {
+      setTimeout(async () => {
+        if (phoneNumber) {
+          try {
+            this.logger.debug(
+              `[Sistema] - Enviando notificação de cobranca no Whatsapp ${phoneNumber} referente a OS ${osNumber}...`,
+            )
+            await this.configurationSystemService.sendMidia(
+              phoneNumber,
+              osNumber,
+              isResendNotification,
+              osNumberToResendNotification,
+            )
+            this.logger.warn(
+              `[Sistema] - Notificação de cobranca no Whatsapp enviada com sucesso.`,
+            )
+          } catch (error) {
+            this.logger.error(
+              `[Sistema] - Houve um erro ao enviar a notificacao de cobranca no Whatsapp ${phoneNumber} referente a OS ${osNumber}.`,
+            )
+          }
+        } else {
+          this.logger.error(
+            `[Sistema] - Número de whatsapp não encontrado referente a OS ${osNumber}.`,
+          )
+        }
+      }, 10000)
+    } catch (error) {
+      throw new HttpException(
+        {
+          message: error,
+        },
+        HttpStatus.EXPECTATION_FAILED,
+      )
+    }
+  }
+
   async updateBoletoUploaded(osNumber: string, isBoletoUploaded: boolean) {
     try {
       await this.serviceModel.updateOne(
@@ -233,11 +283,23 @@ export class ServiceService {
     }
   }
 
+  async getPendingOSNumber(clientId: string): Promise<string[]> {
+    try {
+      const serviceOrders = await this.serviceModel.find({
+        status: 'PENDENTE',
+        formOfPayment: 'Boleto'
+      })
+      return serviceOrders.filter((item) => item?.client?.id === clientId && item?.isBoletoUploaded).map((item) => item.osNumber)
+    } catch (error) {}
+    return ['']
+  }
+
   async uploadBoleto(
     files: Express.Multer.File[],
     osNumber: string,
     clientId: string,
   ) {
+
     if (!files.length) {
       throw new HttpException(
         {
@@ -273,31 +335,12 @@ export class ServiceService {
 
       const data = await this.clientsService.findOne(clientId)
       const phoneNumber = `55${clearSpecialCharacters(data?.phoneNumber)}`
-
-      setTimeout(async () => {
-        if (phoneNumber) {
-          try {
-            this.logger.debug(
-              `[Sistema] - Enviando notificação de cobranca no Whatsapp ${phoneNumber} referente a OS ${osNumber}...`,
-            )
-            await this.configurationSystemService.sendMidia(
-              phoneNumber,
-              osNumber,
-            )
-            this.logger.warn(
-              `[Sistema] - Notificação de cobranca no Whatsapp enviada com sucesso.`,
-            )
-          } catch (error) {
-            this.logger.error(
-              `[Sistema] - Houve um erro ao enviar a notificacao de cobranca no Whatsapp ${phoneNumber} referente a OS ${osNumber}.`,
-            )
-          }
-        } else {
-          this.logger.error(
-            `[Sistema] - Número de whatsapp não encontrado referente a OS ${osNumber}.`,
-          )
-        }
-      }, 10000)
+      await this.getPendingOSNumber(clientId)
+     
+      await this.sendNotificationWhatsappToClient(
+        phoneNumber,
+        osNumber,
+      )
 
       return {message: 'ok'}
     } catch (error) {
@@ -315,6 +358,10 @@ export class ServiceService {
     const folderPath = path.join(userHomeDir, 'boletos')
 
     try {
+      // Verificar se a pasta "boletos" já existe
+      if (!fs.existsSync(folderPath)) {
+        fs.mkdirSync(folderPath, {recursive: true})
+      }
       const files = fs.readdirSync(folderPath)
       const matchingFiles = files.filter((fileName) =>
         removeAccents(fileName).includes(removeAccents(fileNameToDelete)),
@@ -345,6 +392,10 @@ export class ServiceService {
     const folderPath = path.join(userHomeDir, 'boletos')
 
     try {
+      // Verificar se a pasta "boletos" já existe
+      if (!fs.existsSync(folderPath)) {
+        fs.mkdirSync(folderPath, {recursive: true})
+      }
       const files = fs.readdirSync(folderPath)
       const regex = new RegExp(`REF\\.\\[OS\\s+${orderNumber}\\]\\.pdf`, 'i')
       const matchingFiles = files.filter(
@@ -843,11 +894,13 @@ export class ServiceService {
   }
 
   async deleteFileByOrderNumber(orderNumber: string) {
-    //const folderPath = path.join('dist', 'Modules', 'boletos')
     const userHomeDir = os.homedir()
     const folderPath = path.join(userHomeDir, 'boletos')
-    //const fileName = `${orderNumber}.pdf`
-    //const filePath = path.join(folderPath, fileName)
+
+    // Verificar se a pasta "boletos" já existe
+    if (!fs.existsSync(folderPath)) {
+      fs.mkdirSync(folderPath, {recursive: true})
+    }
 
     const files = fs.readdirSync(folderPath)
     const matchingFiles = files.filter((fileName) => {
