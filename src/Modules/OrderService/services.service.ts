@@ -218,6 +218,8 @@ export class ServiceService {
 
     const phoneNumber = `55${clearSpecialCharacters(dataClient?.phoneNumber)}`
 
+    this.logger.debug({ phoneNumberClient: dataClient?.phoneNumber, phoneNumberFormated: phoneNumber })
+
     let osNumberToResendNotification: string[] = []
 
     if (isResendNotification) {
