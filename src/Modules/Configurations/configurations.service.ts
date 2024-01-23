@@ -571,14 +571,6 @@ export class ConfigurationSystemService {
       let instanceName = token?.instanceName
       let jwt = token?.jwt
       const files = await this.findFileByOrderNumber(osNumber)
-      this.logger.warn({
-        phoneNumber,
-        ip,
-        instanceName,
-        osNumber,
-        isResendNotification,
-        osNumberToResendNotification,
-      })
       try {
         await this.sendTextToWhatsapp(
           phoneNumber,

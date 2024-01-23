@@ -218,8 +218,6 @@ export class ServiceService {
 
     const phoneNumber = `55${clearSpecialCharacters(dataClient?.phoneNumber)}`
 
-    this.logger.debug({ phoneNumberClient: dataClient?.phoneNumber, phoneNumberFormated: phoneNumber })
-
     let osNumberToResendNotification: string[] = []
 
     if (isResendNotification) {
@@ -344,6 +342,8 @@ export class ServiceService {
      
       await this.sendNotificationWhatsappToClient(
         osNumber,
+        false,
+        clientId
       )
 
       return {message: 'ok'}
