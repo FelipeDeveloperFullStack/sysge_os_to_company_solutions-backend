@@ -419,20 +419,29 @@ export class ConfigurationSystemService {
     osNumberToResendNotification?: string[],
   ) {
     try {
-
-      const osPending = osNumberToResendNotification.filter((item) => item !== osNumber)
+      const osPending = osNumberToResendNotification.filter(
+        (item) => item !== osNumber,
+      )
 
       const getMessagePendingNotification = () => {
         if (osPending.length > 1) {
-          return `${getGreeting()}\n\nEstamos enviando esta notificação via Whatsapp para lembrá-lo de que o boleto referente à ordem de serviço de número *${osNumber}*, o qual ainda não foi liquidado.\n\nAgradecemos sua atenção e pontualidade. ${!!osPending?.length ? `\n\n*Além disso, informamos que ainda existem as ordens de serviço de número ${osPending.join(
-            ',',
-          )} pendentes para pagamento.*` : ''}\n\nQualquer dúvida, estamos à disposição.\n\nCaso o boleto já esteja pago, por favor, desconsidere essa mensagem.\n\nAtenciosamente.`
+          return `${getGreeting()}\n\nEstamos enviando esta notificação via Whatsapp para lembrá-lo de que o boleto referente à ordem de serviço de número *${osNumber}*, o qual ainda não foi liquidado.\n\nAgradecemos sua atenção e pontualidade. ${
+            !!osPending?.length
+              ? `\n\n*Além disso, informamos que ainda existem as ordens de serviço de número ${osPending.join(
+                  ',',
+                )} pendentes para pagamento.*`
+              : ''
+          }\n\nQualquer dúvida, estamos à disposição.\n\nCaso o boleto já esteja pago, por favor, desconsidere essa mensagem.\n\nAtenciosamente.`
         } else {
-          return `${getGreeting()}\n\nEstamos enviando esta notificação via Whatsapp para lembrá-lo de que o boleto referente à ordem de serviço de número *${osNumber}*, o qual ainda não foi liquidado.\n\nAgradecemos sua atenção e pontualidade. ${!!osPending?.length ? `\n\n*Além disso, informamos que ainda existem a orden de serviço de número ${osPending.join(
-            ',',
-          )} pendente para pagamento.*` : ''}\n\nQualquer dúvida, estamos à disposição.\n\nCaso o boleto já esteja pago, por favor, desconsidere essa mensagem.\n\nAtenciosamente.`
+          return `${getGreeting()}\n\nEstamos enviando esta notificação via Whatsapp para lembrá-lo de que o boleto referente à ordem de serviço de número *${osNumber}*, o qual ainda não foi liquidado.\n\nAgradecemos sua atenção e pontualidade. ${
+            !!osPending?.length
+              ? `\n\n*Além disso, informamos que ainda existem a orden de serviço de número ${osPending.join(
+                  ',',
+                )} pendente para pagamento.*`
+              : ''
+          }\n\nQualquer dúvida, estamos à disposição.\n\nCaso o boleto já esteja pago, por favor, desconsidere essa mensagem.\n\nAtenciosamente.`
         }
-       }
+      }
 
       await axios.post(
         `http://${ip}:8084/message/sendText/${instanceName}`,
@@ -441,10 +450,10 @@ export class ConfigurationSystemService {
           textMessage: {
             text: !isResendNotification
               ? `${getGreeting()}\n\nEstamos enviando esta notificação via Whatsapp para lembrá-lo de que o boleto referente à ordem de serviço de número *${osNumber}* foi gerado.\n\nAgradecemos sua atenção e pontualidade.\nQualquer dúvida, estamos à disposição.\nCaso o boleto já esteja pago, por favor, desconsidere essa mensagem.\n\nAtenciosamente.`
-              : getMessagePendingNotification()
+              : getMessagePendingNotification(),
           },
           options: {
-            delay: 0,
+            delay: 1500,
             presence: 'composing',
           },
         },
@@ -562,6 +571,14 @@ export class ConfigurationSystemService {
       let instanceName = token?.instanceName
       let jwt = token?.jwt
       const files = await this.findFileByOrderNumber(osNumber)
+      this.logger.warn({
+        phoneNumber,
+        ip,
+        instanceName,
+        osNumber,
+        isResendNotification,
+        osNumberToResendNotification,
+      })
       try {
         await this.sendTextToWhatsapp(
           phoneNumber,
