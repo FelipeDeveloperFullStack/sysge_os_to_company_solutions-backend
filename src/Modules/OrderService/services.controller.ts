@@ -20,6 +20,7 @@ import {ServiceFilterDto} from './dto/service.filter.dto'
 import {ServicePartialPaymentDto} from './dto/service.partial.payment.dto'
 import {ServiceService} from './services.service'
 import clearSpecialCharacters from 'src/Common/Helpers/clearSpecialCharacters'
+import {ScheduleBoletoService} from 'src/Schedule/EmailBoleto/ScheduleBoletoService'
 
 interface DeleteFileByName {
   fileName: string
@@ -27,7 +28,10 @@ interface DeleteFileByName {
 
 @Controller('orderServices')
 export class ServiceController {
-  constructor(private readonly serviceService: ServiceService) {}
+  constructor(
+    private readonly serviceService: ServiceService,
+    private readonly scheduleBoletoService: ScheduleBoletoService,
+  ) {}
 
   @Post()
   create(@Body() createServiceDto: ServiceDto, @Headers('user') user: string) {
@@ -39,12 +43,21 @@ export class ServiceController {
     @Body() dto: ServiceDto,
     @Headers('user') user: string,
   ) {
-    return this.serviceService.sendNotificationWhatsappToClient(
-      `55${clearSpecialCharacters(dto?.client?.phoneNumber)}`,
-      dto?.osNumber,
-      true,
-      dto?.client?.id
-    )
+    try {
+      this.serviceService.sendNotificationWhatsappToClient(
+        dto?.osNumber,
+        true,
+        dto?.client?.id,
+      )
+      this.scheduleBoletoService.sendEmailNotification(
+        dto?.osNumber,
+        dto?.client?.id,
+        dto?.isSendFirstTime,
+      )
+      return {status: 200}
+    } catch (error) {
+      return error
+    }
   }
 
   @Put('partial/payment')
@@ -95,7 +108,21 @@ export class ServiceController {
     @Param('osNumber') osNumber: string,
     @Param('clientId') clientId: string,
   ) {
-    return this.serviceService.uploadBoleto(files['file[]'], osNumber, clientId)
+    try {
+      await this.serviceService.uploadBoleto(
+        files['file[]'],
+        osNumber,
+        clientId,
+      )
+      await this.scheduleBoletoService.sendEmailNotification(
+        osNumber,
+        clientId,
+        true,
+      )
+      return {status: 200}
+    } catch (error) {
+      return error
+    }
   }
 
   @Get('total/incomes')

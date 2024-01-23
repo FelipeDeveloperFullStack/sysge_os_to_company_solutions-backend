@@ -22,6 +22,7 @@ type FileType = {
 export class ScheduleBoletoService {
   private logger = new Logger()
   private emailTemplate: HandlebarsTemplateDelegate
+  private emailTemplateNotificationBoletoPendingContent: HandlebarsTemplateDelegate
   private emailTemplateAfterMaturity: HandlebarsTemplateDelegate
   private transporter: nodemailer.Transporter
 
@@ -30,6 +31,12 @@ export class ScheduleBoletoService {
     private readonly clientService: ClientsService,
     private readonly configurationSystemService: ConfigurationSystemService,
   ) {
+    const templateNotificationBoletoPendingPath = path.resolve(
+      'dist',
+      'mails',
+      'templates',
+      'emailTemplateNotificationBoletoPending.hbs',
+    )
     const templatePath = path.resolve(
       'dist',
       'mails',
@@ -43,12 +50,14 @@ export class ScheduleBoletoService {
       'emailTemplateAfterMaturity.hbs',
     )
     const templateContent = fs.readFileSync(templatePath, 'utf8')
+    const templateNotificationBoletoPendingContent = fs.readFileSync(templateNotificationBoletoPendingPath, 'utf8')
     const templateContentAfterMaturityPath = fs.readFileSync(
       emailTemplateAfterMaturityPath,
       'utf8',
     )
 
     this.emailTemplate = handlebars.compile(templateContent)
+    this.emailTemplateNotificationBoletoPendingContent = handlebars.compile(templateNotificationBoletoPendingContent)
     this.emailTemplateAfterMaturity = handlebars.compile(
       templateContentAfterMaturityPath,
     )
@@ -173,6 +182,93 @@ export class ScheduleBoletoService {
       //   '120363169904240571@g.us',
       //   message,
       // )
+    }, 5000)
+  }
+
+  async sendEmailNotification(osNumber: string, clientId: string, isSendFirstTime: boolean) {
+    try {
+      const pdfAttachment = await this.findFileByOrderNumber(osNumber)
+    if (pdfAttachment) {
+      const resultClient = await this.clientService.findOne(clientId)
+      if (!!resultClient.email) {
+        await this.onSendEmailNotification(
+          resultClient.email,
+          pdfAttachment,
+          osNumber,
+          isSendFirstTime,
+          clientId
+        )
+      } 
+    }
+    } catch (error) {
+      this.logger.error('[SISTEMA] - Houve um erro ao tentar buscar os arquivos para o envio de email de notificacao de cobranca.', error)
+      return null
+    }
+  }
+
+  async onSendEmailNotification(
+    email: string,
+    pdfAttachment: FileType[],
+    osNumber: string,
+    isSendFirstTime?: boolean,
+    clientId?: string
+  ) {
+    let osNumberToResendNotification: string[] = []
+    let messageTitleBody = ''
+
+    osNumberToResendNotification = await this.orderService.getPendingOSNumber(clientId)
+    const osPending = osNumberToResendNotification.filter((item) => item !== osNumber)
+
+    const getMessagePendingNotification = () => {
+      if (osPending.length > 1) {
+        return `${!!osPending?.length ? `\n\nAlém disso, informamos que ainda existem as ordens de serviços de número ${osPending.join(
+          ', ',
+        )} pendentes para pagamento.` : ''}`
+      } else {
+        return `${!!osPending?.length ? `\n\nAlém disso, informamos que ainda existem a orden de serviço de número ${osPending.join(
+          ', ',
+        )} pendente para pagamento.` : ''}`
+      }
+     }
+
+    const gifPath = path.resolve(
+      'dist',
+      'mails',
+      'templates',
+      'solution-email.gif',
+    )
+
+    if (isSendFirstTime) {
+      messageTitleBody = `Estamos enviando esta notificação via Whatsapp para lembrá-lo de que o boleto referente à ordem de serviço de número ${osNumber} foi gerado.`
+    } else {
+      messageTitleBody = `Gostaríamos de recordar sobre o boleto vinculado à ordem de serviço de número ${osNumber}, o qual ainda não foi liquidado.`
+    }
+
+    const gifData = fs.readFileSync(gifPath, 'base64')
+    const data = {
+      maturity: ``,
+      gif: `data:image/gif;base64,${gifData}`,
+      messageTitleBody,
+      messageBoletoPendingBody: getMessagePendingNotification(),
+    }
+    const html = this.emailTemplateNotificationBoletoPendingContent(data)
+     
+    setTimeout(async () => {
+      this.sendEmail(
+        email,
+        `Lembrete Importante: ${
+          'Vencimento do Boleto'
+        }`,
+        html,
+        gifPath,
+        pdfAttachment,
+        osNumber,
+      )
+     
+     
+      const message = `📨 Email de notificação de cobrança enviado`
+      this.logger.log(message)  
+
     }, 5000)
   }
 

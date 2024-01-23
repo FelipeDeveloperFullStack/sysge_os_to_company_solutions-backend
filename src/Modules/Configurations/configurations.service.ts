@@ -424,11 +424,11 @@ export class ConfigurationSystemService {
 
       const getMessagePendingNotification = () => {
         if (osPending.length > 1) {
-          return `${getGreeting()}\n\nEstamos enviando esta notificação via Whatsapp para lembrá-lo de que o boleto referente à ordem de serviço de número *${osNumber}* foi gerado.\n\nAgradecemos sua atenção e pontualidade. ${!!osPending?.length ? `\n\n*Além disso, informamos que ainda existem as ordens de serviço de número ${osPending.join(
+          return `${getGreeting()}\n\nEstamos enviando esta notificação via Whatsapp para lembrá-lo de que o boleto referente à ordem de serviço de número *${osNumber}*, o qual ainda não foi liquidado.\n\nAgradecemos sua atenção e pontualidade. ${!!osPending?.length ? `\n\n*Além disso, informamos que ainda existem as ordens de serviço de número ${osPending.join(
             ',',
           )} pendentes para pagamento.*` : ''}\n\nQualquer dúvida, estamos à disposição.\n\nCaso o boleto já esteja pago, por favor, desconsidere essa mensagem.\n\nAtenciosamente.`
         } else {
-          return `${getGreeting()}\n\nEstamos enviando esta notificação via Whatsapp para lembrá-lo de que o boleto referente à ordem de serviço de número *${osNumber}* foi gerado.\n\nAgradecemos sua atenção e pontualidade. ${!!osPending?.length ? `\n\n*Além disso, informamos que ainda existem a orden de serviço de número ${osPending.join(
+          return `${getGreeting()}\n\nEstamos enviando esta notificação via Whatsapp para lembrá-lo de que o boleto referente à ordem de serviço de número *${osNumber}*, o qual ainda não foi liquidado.\n\nAgradecemos sua atenção e pontualidade. ${!!osPending?.length ? `\n\n*Além disso, informamos que ainda existem a orden de serviço de número ${osPending.join(
             ',',
           )} pendente para pagamento.*` : ''}\n\nQualquer dúvida, estamos à disposição.\n\nCaso o boleto já esteja pago, por favor, desconsidere essa mensagem.\n\nAtenciosamente.`
         }

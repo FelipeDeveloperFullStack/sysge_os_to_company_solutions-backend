@@ -135,5 +135,9 @@ export class ServiceDto {
   @IsOptional()
   @IsBoolean()
   public isPartial?: boolean
+  
+  @IsOptional()
+  @IsBoolean()
+  public isSendFirstTime?: boolean
 
 }

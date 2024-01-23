@@ -209,11 +209,14 @@ export class ServiceService {
   }
 
   async sendNotificationWhatsappToClient(
-    phoneNumber: string,
     osNumber: string,
     isResendNotification?: boolean,
     clientId?: string
   ) {
+
+    const dataClient = await this.clientsService.findOne(clientId)
+
+    const phoneNumber = `55${clearSpecialCharacters(dataClient?.phoneNumber)}`
 
     let osNumberToResendNotification: string[] = []
 
@@ -338,7 +341,6 @@ export class ServiceService {
       await this.getPendingOSNumber(clientId)
      
       await this.sendNotificationWhatsappToClient(
-        phoneNumber,
         osNumber,
       )
 
