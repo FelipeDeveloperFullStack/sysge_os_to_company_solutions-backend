@@ -9,15 +9,16 @@ import {ExtractNubankModule} from '../NubankManager/nubank.module'
 import {OrderService, ServiceSchema} from './entities/service.entity'
 import {ServiceController} from './services.controller'
 import {ServiceService} from './services.service'
+import { ConfigurationSystemService } from '../Configurations/configurations.service'
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       {name: OrderService.name, schema: ServiceSchema},
     ]),
+    forwardRef(() => ConfigurationSystemModule),
     forwardRef(() => ClientsModule),
     forwardRef(() => ScheduleBoletoModule),
-    forwardRef(() => ConfigurationSystemModule),
     forwardRef(() => ExtractNubankModule),
     forwardRef(() => ExpensesModule),
   ],

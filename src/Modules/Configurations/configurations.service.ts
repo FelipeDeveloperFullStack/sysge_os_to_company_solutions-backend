@@ -1,4 +1,11 @@
-import {HttpException, HttpStatus, Injectable, Logger} from '@nestjs/common'
+import {
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+  Logger,
+  forwardRef,
+} from '@nestjs/common'
 import {InjectModel} from '@nestjs/mongoose'
 import axios from 'axios'
 import * as fs from 'fs'
@@ -17,6 +24,8 @@ import {
   ConfigurationSystemDocument,
 } from './entities/configurations.entity'
 import {getPublicIP} from 'src/Common/Helpers/publicIP'
+import {ServiceService} from '../OrderService/services.service'
+import {OrderServicesModule} from '../OrderService/services.module'
 
 type MimeType =
   | 'text/plain'
@@ -172,20 +181,27 @@ export class ConfigurationSystemService {
     }
   }
 
+  async onHandleEnableToDontShowBeforeYearCurrent() {}
+
   async createOrUpdate(config: ConfigurationSystemDto) {
     config = {
       ...config,
-      isEnableEmailBilling: config.isEnableEmailBilling,
-      isEnableWhatsappBilling: config.isEnableWhatsappBilling,
+      isEnableEmailBilling: config?.isEnableEmailBilling,
+      isEnableToDontShowBeforeYearCurrent:
+        config?.isEnableToDontShowBeforeYearCurrent,
+    }
+
+    if (config?.isEnableToDontShowBeforeYearCurrent) {
+      await this.onHandleEnableToDontShowBeforeYearCurrent()
     }
 
     const confs = await this.findAll()
 
-    const extractNumbank = new this.configurationSystemModel(config)
+    const configModel = new this.configurationSystemModel(config)
 
     try {
       if (!confs?.length) {
-        extractNumbank.save()
+        configModel.save()
       } else {
         await this.update(config, String(confs[0]._id).toString())
       }
@@ -211,7 +227,8 @@ export class ConfigurationSystemService {
         {
           $set: {
             isEnableEmailBilling: config.isEnableEmailBilling,
-            isEnableWhatsappBilling: config.isEnableWhatsappBilling,
+            isEnableToDontShowBeforeYearCurrent:
+              config.isEnableToDontShowBeforeYearCurrent,
           },
         },
       )

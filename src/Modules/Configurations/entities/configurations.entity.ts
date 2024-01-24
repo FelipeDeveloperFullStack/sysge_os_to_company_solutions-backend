@@ -6,7 +6,7 @@ export type ConfigurationSystemDocument = ConfigurationSystem & Document
 @Schema()
 export class ConfigurationSystem {
   @Prop()
-  public isEnableWhatsappBilling: boolean
+  public isEnableToDontShowBeforeYearCurrent: boolean
 
   @Prop()
   public isEnableEmailBilling: boolean
