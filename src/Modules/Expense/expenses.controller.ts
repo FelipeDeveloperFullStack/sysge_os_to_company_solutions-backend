@@ -52,6 +52,18 @@ export class ModelController {
     return this.modelExpense.findOne(id)
   }
 
+  @Get(
+    '/update-expense-isEnableToDontShowBeforeYearCurrent/:isEnableToDontShowBeforeYearCurrent',
+  )
+  updateAllRegisterIncomesToDontShowBeforeYearCurrent(
+    @Param('isEnableToDontShowBeforeYearCurrent')
+    isEnableToDontShowBeforeYearCurrent: boolean,
+  ) {
+    return this.modelExpense.updateAllRegisterExpensesToDontShowBeforeYearCurrent(
+      isEnableToDontShowBeforeYearCurrent,
+    )
+  }
+
   @Put(':id')
   update(
     @Param('id') id: string,

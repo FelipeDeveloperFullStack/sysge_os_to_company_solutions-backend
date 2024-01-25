@@ -157,6 +157,9 @@ export class OrderService {
 
   @Prop()
   public isPartial: boolean
+
+  @Prop()
+  public isEnableToDontShowBeforeYearCurrent?: boolean
 }
 
 export const ServiceSchema = SchemaFactory.createForClass(OrderService)

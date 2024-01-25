@@ -1,4 +1,4 @@
-import {HttpException, HttpStatus, Injectable} from '@nestjs/common'
+import {HttpException, HttpStatus, Injectable, Logger} from '@nestjs/common'
 import {InjectModel} from '@nestjs/mongoose'
 import {addDays, format, isBefore, isWithinInterval, parse} from 'date-fns'
 import {ptBR} from 'date-fns/locale'
@@ -12,6 +12,9 @@ import {Expense as _Model, ModelDocument} from './entities/expense.entity'
 
 @Injectable()
 export class ExpenseService {
+
+  private logger = new Logger()
+
   constructor(
     @InjectModel(_Model.name)
     private expenseModel: Model<ModelDocument>,
@@ -43,7 +46,8 @@ export class ExpenseService {
 
   async getSumTotalExpense() {
     const result = await this.expenseModel.find()
-    const total = result.reduce((acc, item) => {
+    const resultData = result.filter((item) => !item.isEnableToDontShowBeforeYearCurrent)
+    const total = resultData.reduce((acc, item) => {
       const {clean} = formatInputPrice(item?.value)
       if (item.status === 'PAGO') {
         return acc + clean
@@ -54,11 +58,53 @@ export class ExpenseService {
     return {total: total}
   }
 
+  async extractYear(dateString: string) {
+    const regex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+    const match = dateString.match(regex);
+    if (!match) {
+        console.error("Invalid date format. Please use the format DD/MM/YYYY.");
+        return null;
+    }
+    const year = parseInt(match[3], 10);
+    return year;
+}
+
+  async updateAllRegisterExpensesToDontShowBeforeYearCurrent(isEnableToDontShowBeforeYearCurrent: boolean) {
+    const expensesDataResult = await this.expenseModel.find()
+    const currentYear = new Date().getFullYear()
+    expensesDataResult.forEach(async (item) => {
+      const year = await this.extractYear(item.dateIn)
+      if (year < currentYear) {
+        try {
+          await this.expenseModel.updateOne(
+            {
+               _id: item._id,
+            },
+            {
+              $set: {
+                isEnableToDontShowBeforeYearCurrent
+              },
+            },
+          )
+        } catch (error) {
+          this.logger.error(error)
+          throw new HttpException(
+            {
+              message: error,
+            },
+            HttpStatus.EXPECTATION_FAILED,
+          )
+        }
+      }
+    })
+  } 
+
   async getSumTotalExpenseType() {
     const resultExpense = await this.expenseModel.find()
+    const resultData = resultExpense.filter((item) => !item.isEnableToDontShowBeforeYearCurrent)
     const currentMonthAbbreviation = getMonthAbbreviation()
 
-    const totalExpenseEmpresa = resultExpense.reduce((acc, item) => {
+    const totalExpenseEmpresa = resultData.reduce((acc, item) => {
       const dateExpenseIn = parse(item.dateIn, 'dd/MM/yyyy', new Date())
       const formatedMonth = format(dateExpenseIn, 'MMM', {locale: ptBR})
       if (formatedMonth === currentMonthAbbreviation) {
@@ -73,7 +119,7 @@ export class ExpenseService {
       }
     }, 0)
 
-    const totalExpensePessoal = resultExpense.reduce((acc, item) => {
+    const totalExpensePessoal = resultData.reduce((acc, item) => {
       const dateExpenseIn = parse(item.dateIn, 'dd/MM/yyyy', new Date())
       const formatedMonth = format(dateExpenseIn, 'MMM', {locale: ptBR})
       if (formatedMonth === currentMonthAbbreviation) {
@@ -117,17 +163,19 @@ export class ExpenseService {
     // Ordenando por "dateIn" em ordem crescente (do mais antigo para o mais recente)
     query = query.sort({dateIn: -1})
 
-    return await query.exec()
+    const result = await query.exec()
+    return result.filter((item) => !item.isEnableToDontShowBeforeYearCurrent)
   }
 
   async findAllPersonalExpense() {
     const resultExpense = await this.expenseModel.find()
+    const resultData = resultExpense.filter((item) => !item.isEnableToDontShowBeforeYearCurrent)
 
     // const regexConta = /CONTA:\s*9707453-5/g
     const expenseType = 'Pessoal'
     let totalSum = 0
     const expenseList = []
-    resultExpense.forEach((expense) => {
+    resultData.forEach((expense) => {
       // const match = expense.expense.match(regexConta)
       const match = expense?.expense_type?.trim() === expenseType
       if (match) {
@@ -219,7 +267,8 @@ export class ExpenseService {
     let count = 0
     let expiredTotal = 0
     const expenses = await this.expenseModel.find()
-    expenses.forEach((expense) => {
+    const resultData = expenses.filter((item) => !item.isEnableToDontShowBeforeYearCurrent)
+    resultData.forEach((expense) => {
       const maturityDate = parse(
         expense.maturity || '',
         'dd/MM/yyyy',

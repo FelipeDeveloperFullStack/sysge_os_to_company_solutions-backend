@@ -215,6 +215,18 @@ export class ServiceController {
     return this.serviceService.findOne(id)
   }
 
+  @Get(
+    '/update-income-isEnableToDontShowBeforeYearCurrent/:isEnableToDontShowBeforeYearCurrent',
+  )
+  updateAllRegisterIncomesToDontShowBeforeYearCurrent(
+    @Param('isEnableToDontShowBeforeYearCurrent')
+    isEnableToDontShowBeforeYearCurrent: boolean,
+  ) {
+    return this.serviceService.updateAllRegisterIncomesToDontShowBeforeYearCurrent(
+      isEnableToDontShowBeforeYearCurrent,
+    )
+  }
+
   @Put(':id')
   update(@Param('id') id: string, @Body() updateServiceDto: ServiceDto) {
     return this.serviceService.update(id, updateServiceDto)

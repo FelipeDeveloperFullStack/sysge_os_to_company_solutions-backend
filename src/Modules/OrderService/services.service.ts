@@ -450,9 +450,10 @@ export class ServiceService {
 
   async getTotalBoletoNotImported() {
     const orderServices = await this.findAllWithoutParam()
+    const resultData = orderServices.filter((item) => !item?.isEnableToDontShowBeforeYearCurrent)
     const orders = []
-    for (let index = 0; index < orderServices.length; index++) {
-      const element = orderServices[index]
+    for (let index = 0; index < resultData.length; index++) {
+      const element = resultData[index]
       if (
         String(element.status).trim() === 'PENDENTE' &&
         String(element.formOfPayment).trim() === 'Boleto' &&
@@ -481,9 +482,10 @@ export class ServiceService {
 
   async getTotalClientWithoutEmail() {
     const orderServices = await this.findAllWithoutParam()
+    const resultData = orderServices.filter((item) => !item?.isEnableToDontShowBeforeYearCurrent)
     const clients = []
-    for (let index = 0; index < orderServices.length; index++) {
-      const element = orderServices[index]
+    for (let index = 0; index < resultData.length; index++) {
+      const element = resultData[index]
       const clientId = element?.client?.id
       if (
         String(element.status).trim() === 'PENDENTE' &&
@@ -500,7 +502,12 @@ export class ServiceService {
   }
 
   async findAll(serviceFilter: ServiceFilterDto) {
-    return await this.serviceModel.find()
+    const result = await this.serviceModel.find()
+    return result.filter((item) => {
+      if (!item?.isEnableToDontShowBeforeYearCurrent) {
+        return item
+      } 
+    })
   }
 
   async callDeleteMergedPDFs(
@@ -623,7 +630,8 @@ export class ServiceService {
     const threeDaysFromNow = addDays(today, 3)
     let count = 0
     const incomes = await this.serviceModel.find()
-    incomes.forEach((income) => {
+    const resultData = incomes.filter((item) => !item?.isEnableToDontShowBeforeYearCurrent)
+    resultData.forEach((income) => {
       const maturityDate = parse(
         income.maturityOfTheBoleto || '',
         'dd/MM/yyyy',
@@ -647,14 +655,16 @@ export class ServiceService {
 
   async getTotalOrderService() {
     const result = await this.serviceModel.find()
-    return {total: result?.length}
+    const resultData = result.filter((item) => !item?.isEnableToDontShowBeforeYearCurrent)
+    return {total: resultData?.length}
   }
 
   async getTotalProftMonth() {
     const resultExpense = await this.expense.findAll()
+    const resultDataExpense = resultExpense.filter((item) => !item?.isEnableToDontShowBeforeYearCurrent)
     const currentMonthAbbreviation = getMonthAbbreviation()
 
-    const totalExpenseEmpresa = resultExpense.reduce((acc, item) => {
+    const totalExpenseEmpresa = resultDataExpense.reduce((acc, item) => {
       const dateExpenseIn = parse(item.dateIn, 'dd/MM/yyyy', new Date())
       const formatedMonth = format(dateExpenseIn, 'MMM', {locale: ptBR})
       if (formatedMonth === currentMonthAbbreviation) {
@@ -669,7 +679,8 @@ export class ServiceService {
       }
     }, 0)
     const resultIncome = await this.serviceModel.find()
-    const totalIncome = resultIncome.reduce((acc, item) => {
+    const resultData = resultIncome.filter((item) => !item?.isEnableToDontShowBeforeYearCurrent)
+    const totalIncome = resultData.reduce((acc, item) => {
       const dateIncomeIn = parse(
         item?.dateClientPayment || item?.dateOS,
         'dd/MM/yyyy',
@@ -693,7 +704,8 @@ export class ServiceService {
 
   async getSumTotalIncomes() {
     const result = await this.serviceModel.find()
-    const total = result.reduce((acc, item) => {
+    const resultData = result.filter((item) => !item?.isEnableToDontShowBeforeYearCurrent)
+    const total = resultData.reduce((acc, item) => {
       const {clean} = formatInputPrice(item?.total)
       if (item.status === 'PAGO') {
         return acc + clean
@@ -701,7 +713,7 @@ export class ServiceService {
         return acc
       }
     }, 0)
-    const totalPending = result.reduce((acc, item) => {
+    const totalPending = resultData.reduce((acc, item) => {
       const {clean} = formatInputPrice(item?.total)
       if (item.status === 'PENDENTE' && item.typeDocument !== 'ORCAMENTO') {
         return acc + clean
@@ -714,7 +726,8 @@ export class ServiceService {
 
   async getSumTotalOrcamento() {
     const result = await this.serviceModel.find()
-    const total = result.reduce((acc, item) => {
+    const resultData = result.filter((item) => !item?.isEnableToDontShowBeforeYearCurrent)
+    const total = resultData.reduce((acc, item) => {
       const {clean} = formatInputPrice(item?.total)
       if (item.typeDocument === 'ORCAMENTO') {
         return acc + clean
@@ -728,6 +741,47 @@ export class ServiceService {
   async findOne(id: string) {
     return await this.serviceModel.findOne({_id: id})
   }
+
+  async extractYear(dateString: string) {
+    const regex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+    const match = dateString.match(regex);
+    if (!match) {
+        console.error("Invalid date format. Please use the format DD/MM/YYYY.");
+        return null;
+    }
+    const year = parseInt(match[3], 10);
+    return year;
+}
+
+  async updateAllRegisterIncomesToDontShowBeforeYearCurrent(isEnableToDontShowBeforeYearCurrent: boolean) {
+    const orderServices = await this.serviceModel.find()
+    const currentYear = new Date().getFullYear()
+    orderServices.forEach(async (item) => {
+      const year = await this.extractYear(item.dateOS)
+      if (year < currentYear) {
+        try {
+          await this.serviceModel.updateOne(
+            {
+               _id: item._id,
+            },
+            {
+              $set: {
+                isEnableToDontShowBeforeYearCurrent
+              },
+            },
+          )
+        } catch (error) {
+          this.logger.error(error)
+          throw new HttpException(
+            {
+              message: error,
+            },
+            HttpStatus.EXPECTATION_FAILED,
+          )
+        }
+      }
+    })
+  } 
 
   async update(id: string, updateServiceDto: ServiceDto) {
     try {
