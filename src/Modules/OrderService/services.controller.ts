@@ -114,11 +114,11 @@ export class ServiceController {
         osNumber,
         clientId,
       )
-      await this.scheduleBoletoService.sendEmailNotification(
-        osNumber,
-        clientId,
-        true,
-      )
+      // await this.scheduleBoletoService.sendEmailNotification(
+      //   osNumber,
+      //   clientId,
+      //   true,
+      // )
       return {status: 200}
     } catch (error) {
       return error

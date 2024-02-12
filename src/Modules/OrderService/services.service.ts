@@ -340,11 +340,11 @@ export class ServiceService {
       const phoneNumber = `55${clearSpecialCharacters(data?.phoneNumber)}`
       await this.getPendingOSNumber(clientId)
      
-      await this.sendNotificationWhatsappToClient(
-        osNumber,
-        false,
-        clientId
-      )
+      // await this.sendNotificationWhatsappToClient(
+      //   osNumber,
+      //   false,
+      //   clientId
+      // )
 
       return {message: 'ok'}
     } catch (error) {
