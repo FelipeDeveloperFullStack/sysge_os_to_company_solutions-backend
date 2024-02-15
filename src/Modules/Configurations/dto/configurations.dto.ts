@@ -8,4 +8,8 @@ export class ConfigurationSystemDto {
   @IsOptional()
   @IsBoolean()
   public isEnableEmailBilling: boolean
+
+  @IsOptional()
+  @IsBoolean()
+  public isEnableSendNotificationMessage: boolean
 }

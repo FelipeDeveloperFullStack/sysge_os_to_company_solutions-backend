@@ -186,6 +186,7 @@ export class ConfigurationSystemService {
   async createOrUpdate(config: ConfigurationSystemDto) {
     config = {
       ...config,
+      isEnableSendNotificationMessage: config?.isEnableSendNotificationMessage,
       isEnableEmailBilling: config?.isEnableEmailBilling,
       isEnableToDontShowBeforeYearCurrent:
         config?.isEnableToDontShowBeforeYearCurrent,
@@ -227,6 +228,7 @@ export class ConfigurationSystemService {
         {
           $set: {
             isEnableEmailBilling: config.isEnableEmailBilling,
+            isEnableSendNotificationMessage: config.isEnableSendNotificationMessage,
             isEnableToDontShowBeforeYearCurrent:
               config.isEnableToDontShowBeforeYearCurrent,
           },

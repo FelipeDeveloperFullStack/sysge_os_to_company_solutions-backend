@@ -301,6 +301,7 @@ export class ServiceService {
     files: Express.Multer.File[],
     osNumber: string,
     clientId: string,
+    isDontSendNotificationMessage?: boolean
   ) {
 
     if (!files.length) {
@@ -340,11 +341,13 @@ export class ServiceService {
       const phoneNumber = `55${clearSpecialCharacters(data?.phoneNumber)}`
       await this.getPendingOSNumber(clientId)
      
-      // await this.sendNotificationWhatsappToClient(
-      //   osNumber,
-      //   false,
-      //   clientId
-      // )
+      if (!isDontSendNotificationMessage) {
+        await this.sendNotificationWhatsappToClient(
+          osNumber,
+          false,
+          clientId
+        )
+      }
 
       return {message: 'ok'}
     } catch (error) {

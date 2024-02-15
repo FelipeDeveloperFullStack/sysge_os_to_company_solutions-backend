@@ -10,6 +10,9 @@ export class ConfigurationSystem {
 
   @Prop()
   public isEnableEmailBilling: boolean
+
+  @Prop()
+  public isEnableSendNotificationMessage: boolean
 }
 
 export const ConfigurationSystemSchema =

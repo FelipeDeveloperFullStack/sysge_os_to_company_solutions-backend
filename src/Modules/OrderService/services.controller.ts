@@ -101,24 +101,28 @@ export class ServiceController {
     return this.serviceService.getTotalBoletoNotImported()
   }
 
-  @Post('upload/boleto/:osNumber/:clientId')
+  @Post('upload/boleto/:osNumber/:clientId/:isDontSendNotificationMessage')
   @UseInterceptors(FileFieldsInterceptor([{name: 'file[]', maxCount: 10}]))
   async uploadBoleto(
     @UploadedFiles() files: Express.Multer.File[],
     @Param('osNumber') osNumber: string,
     @Param('clientId') clientId: string,
+    @Param('isDontSendNotificationMessage') isDontSendNotificationMessage: boolean,
   ) {
     try {
       await this.serviceService.uploadBoleto(
         files['file[]'],
         osNumber,
         clientId,
+        isDontSendNotificationMessage
       )
-      // await this.scheduleBoletoService.sendEmailNotification(
-      //   osNumber,
-      //   clientId,
-      //   true,
-      // )
+      if (!isDontSendNotificationMessage) {
+        await this.scheduleBoletoService.sendEmailNotification(
+          osNumber,
+          clientId,
+          true,
+        )
+      }
       return {status: 200}
     } catch (error) {
       return error
