@@ -165,17 +165,12 @@ export class ExtractNubankService implements OnModuleInit {
       const resultOrderServiceSystem = resultOrderService.filter((item) => {
         const {clean} = formatInputPrice(item?.total)
         if (item.status === 'PENDENTE' && clean === totalValueIncomeExtract) {
-          console.log({item, clientId, totalValueIncomeExtract, clean})
           if (item.client.id === clientId) {
             return item
           }
         }
       })
       const resultOSFiltered = await this.getOldestOS(resultOrderServiceSystem)
-      console.log({
-        resultOrderService: resultOrderService.length,
-        resultOSFilteredTotal: resultOSFiltered.length,
-      })
       resultOSFiltered.forEach(
         async (item: {
           id: string
@@ -223,7 +218,6 @@ export class ExtractNubankService implements OnModuleInit {
         const resultClient = await this.client.findCpfOrCnpj(cpf || cnpj)
         const clientId = resultClient?.id
         if (clientId) {
-          console.log({clientId})
           await this.updateStatusOrderServiceAndSendMessageWhatsapp(
             clientId,
             resultOrderService,
@@ -358,9 +352,9 @@ export class ExtractNubankService implements OnModuleInit {
           const dataReadableNegative = await readCSVFiles(false)
 
           dataReadableNegative?.forEach(async (extract) => {
-            // const hasExtract = await this.expense.findOneIdNubank(
-            //   String(extract.Identificador).trim(),
-            // )
+            const hasExtract = await this.expense.findOneIdNubank(
+              String(extract.Identificador).trim(),
+            )
             // await this.expense.removeByIdNubank(
             //   String(extract.Identificador).trim(),
             // )
@@ -368,19 +362,22 @@ export class ExtractNubankService implements OnModuleInit {
             const formated = formatPrice(extract.Valor * -1)
             const match = String(extract['Descrição']).includes('9707453-5')
 
-            this.expense.create(
-              {
-                dateIn: extract.Data,
-                expense: extract['Descrição'],
-                maturity: '',
-                status: 'PAGO',
-                value: formated,
-                user: 'NUBANK',
-                idNubank: extract.Identificador,
-                expense_type: match ? 'Pessoal' : 'Empresa', // Empresa or Pessoal
-              },
-              'NUBANK',
-            )
+            if (!hasExtract) {
+              this.expense.create(
+                {
+                  dateIn: extract.Data,
+                  expense: extract['Descrição'],
+                  maturity: '',
+                  status: 'PAGO',
+                  value: formated,
+                  user: 'NUBANK',
+                  idNubank: extract.Identificador,
+                  expense_type: match ? 'Pessoal' : 'Empresa', // Empresa or Pessoal
+                },
+                'NUBANK',
+              )
+            }
+
             // if (!hasExtract) {}
           })
           this.sendSocketMessageToFrontend('Procedimento finalizado.')
