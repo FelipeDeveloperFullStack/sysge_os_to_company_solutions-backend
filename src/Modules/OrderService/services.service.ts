@@ -224,7 +224,6 @@ export class ServiceService {
     if (isResendNotification) {
       osNumberToResendNotification = await this.getPendingOSNumber(clientId)
     }
-
     try {
       setTimeout(async () => {
         if (phoneNumber) {
@@ -237,7 +236,8 @@ export class ServiceService {
               osNumber,
               isResendNotification,
               osNumberToResendNotification,
-              isSendFilesWhatsappNotification
+              isSendFilesWhatsappNotification,
+              dataClient?.name,
             )
             this.logger.warn(
               `[Sistema] - Notificação de cobranca no Whatsapp enviada com sucesso.`,

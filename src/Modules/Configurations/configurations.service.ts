@@ -228,7 +228,8 @@ export class ConfigurationSystemService {
         {
           $set: {
             isEnableEmailBilling: config.isEnableEmailBilling,
-            isEnableSendNotificationMessage: config.isEnableSendNotificationMessage,
+            isEnableSendNotificationMessage:
+              config.isEnableSendNotificationMessage,
             isEnableToDontShowBeforeYearCurrent:
               config.isEnableToDontShowBeforeYearCurrent,
           },
@@ -436,6 +437,8 @@ export class ConfigurationSystemService {
     osNumber: string,
     isResendNotification?: boolean,
     osNumberToResendNotification?: string[],
+    isSendFilesWhatsappNotification?: boolean,
+    clientName?: string
   ) {
     try {
       const osPending = osNumberToResendNotification.filter(
@@ -462,6 +465,16 @@ export class ConfigurationSystemService {
         }
       }
 
+      const getMessagePendingNotificationWhenNotSendFiles = () => {
+        return `*Notificação Importante: Pendências de Pagamento*\n\nPrezado(a) ${clientName}\n\n${
+          osNumberToResendNotification.length > 1
+            ? `Enviamos um e-mail importante sobre pendências de pagamento das ordens de serviço de números *${osNumberToResendNotification.join(
+                ',',
+              )}*. Por favor, verifique sua caixa de entrada e spam.*`
+            : `Enviamos um e-mail importante sobre a pendência de pagamento da ordem de serviço de número *${osNumber}*. Por favor, verifique sua caixa de entrada e spam.*`
+        }\n\nEstamos à disposição para ajudá-lo(a) com qualquer dúvida..\n\nCaso o boleto já esteja pago, por favor, desconsidere essa mensagem.\n\nAtenciosamente.\n\nSolution`
+      }
+
       await axios.post(
         `http://${ip}:8084/message/sendText/${instanceName}`,
         {
@@ -469,6 +482,8 @@ export class ConfigurationSystemService {
           textMessage: {
             text: !isResendNotification
               ? `${getGreeting()}\n\nEstamos enviando esta notificação via Whatsapp para lembrá-lo de que o boleto referente à ordem de serviço de número *${osNumber}* foi gerado.\n\nAgradecemos sua atenção e pontualidade.\nQualquer dúvida, estamos à disposição.\nCaso o boleto já esteja pago, por favor, desconsidere essa mensagem.\n\nAtenciosamente.`
+              : !isSendFilesWhatsappNotification
+              ? getMessagePendingNotificationWhenNotSendFiles()
               : getMessagePendingNotification(),
           },
           options: {
@@ -574,7 +589,8 @@ export class ConfigurationSystemService {
     osNumber?: string,
     isResendNotification?: boolean,
     osNumberToResendNotification?: string[],
-    isSendFilesWhatsappNotification?: boolean
+    isSendFilesWhatsappNotification?: boolean,
+    clientName?: string
   ) {
     try {
       let token = undefined
@@ -600,6 +616,8 @@ export class ConfigurationSystemService {
           osNumber,
           isResendNotification,
           osNumberToResendNotification,
+          isSendFilesWhatsappNotification,
+          clientName
         )
       } catch (error) {
         console.log('Erro ao enviar texto: ', error)
