@@ -510,7 +510,7 @@ export class ConfigurationSystemService {
       const formData = new FormData()
       formData.append('number', phoneNumber)
       formData.append('caption', ' ')
-      formData.append('attachment', blob, fileName) // Replace yourMediaFile with the actual file
+      formData.append('attachment', blob, fileName)
       formData.append('mediatype', 'document')
       formData.append('delay', '1500')
 
@@ -574,6 +574,7 @@ export class ConfigurationSystemService {
     osNumber?: string,
     isResendNotification?: boolean,
     osNumberToResendNotification?: string[],
+    isSendFilesWhatsappNotification?: boolean
   ) {
     try {
       let token = undefined
@@ -603,20 +604,25 @@ export class ConfigurationSystemService {
       } catch (error) {
         console.log('Erro ao enviar texto: ', error)
       }
-      files.forEach(async (file) => {
-        try {
-          await this.sendAttachmentToWhatsappClientNumber(
-            phoneNumber,
-            instanceName,
-            ip,
-            jwt,
-            file.fileName,
-            file.base64,
-          )
-        } catch (error) {
-          console.log('Erro ao enviar anexo', error)
-        }
-      })
+      /**
+       * @description A variável isSendFilesWhatsappNotification permite ou nao enviar os arquivos no whatsapp
+       */
+      if (isSendFilesWhatsappNotification) {
+        files.forEach(async (file) => {
+          try {
+            await this.sendAttachmentToWhatsappClientNumber(
+              phoneNumber,
+              instanceName,
+              ip,
+              jwt,
+              file.fileName,
+              file.base64,
+            )
+          } catch (error) {
+            console.log('Erro ao enviar anexo', error)
+          }
+        })
+      }
       return 'File sended with successfully'
     } catch (error) {
       //console.log(error)

@@ -12,6 +12,9 @@ export class Client {
   public address: string
 
   @Prop()
+  public isSendFilesWhatsappNotification: boolean
+
+  @Prop()
   public city: string
 
   @Prop()

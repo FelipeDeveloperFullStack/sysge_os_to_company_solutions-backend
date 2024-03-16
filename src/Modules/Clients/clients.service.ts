@@ -136,6 +136,7 @@ export class ClientsService {
         },
         {
           $set: {
+            ...client,
             user,
             name: String(client.name).toUpperCase(),
             address: String(client.address).toUpperCase(),

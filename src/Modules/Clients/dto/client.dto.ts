@@ -1,7 +1,5 @@
 import {
   IsBoolean,
-  IsEmail,
-  IsNotEmpty,
   IsOptional,
   IsString,
 } from 'class-validator'
@@ -12,6 +10,10 @@ export class ClientDto {
 
   @IsString()
   public address: string
+
+  @IsOptional()
+  @IsBoolean()
+  public isSendFilesWhatsappNotification: boolean
 
   @IsOptional()
   @IsString()

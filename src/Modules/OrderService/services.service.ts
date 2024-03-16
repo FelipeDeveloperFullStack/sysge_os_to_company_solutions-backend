@@ -217,6 +217,7 @@ export class ServiceService {
     const dataClient = await this.clientsService.findOne(clientId)
 
     const phoneNumber = `55${clearSpecialCharacters(dataClient?.phoneNumber)}`
+    const isSendFilesWhatsappNotification = dataClient?.isSendFilesWhatsappNotification
 
     let osNumberToResendNotification: string[] = []
 
@@ -236,6 +237,7 @@ export class ServiceService {
               osNumber,
               isResendNotification,
               osNumberToResendNotification,
+              isSendFilesWhatsappNotification
             )
             this.logger.warn(
               `[Sistema] - Notificação de cobranca no Whatsapp enviada com sucesso.`,
