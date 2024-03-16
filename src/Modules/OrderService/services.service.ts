@@ -825,6 +825,7 @@ export class ServiceService {
       if (orderService?.osNumber) {
         updateServiceDto = {
           ...updateServiceDto,
+          osNumber: orderService?.osNumber,
           description: null,
         }
       }
