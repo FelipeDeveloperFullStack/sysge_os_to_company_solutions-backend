@@ -211,15 +211,15 @@ export class ServiceService {
   async sendNotificationWhatsappToClient(
     osNumber: string,
     isResendNotification?: boolean,
-    clientId?: string
+    clientId?: string,
   ) {
-
     const dataClient = await this.clientsService.findOne(clientId)
 
-    const dataOS = await this.serviceModel.findOne({ osNumber })
+    const dataOS = await this.serviceModel.findOne({osNumber})
 
     const phoneNumber = `55${clearSpecialCharacters(dataClient?.phoneNumber)}`
-    const isSendFilesWhatsappNotification = dataClient?.isSendFilesWhatsappNotification
+    const isSendFilesWhatsappNotification =
+      dataClient?.isSendFilesWhatsappNotification
 
     let osNumberToResendNotification: string[] = []
 
@@ -240,7 +240,7 @@ export class ServiceService {
               osNumberToResendNotification,
               isSendFilesWhatsappNotification,
               dataClient?.name,
-              dataOS.formOfPayment
+              dataOS.formOfPayment,
             )
             this.logger.warn(
               `[Sistema] - Notificação de cobranca no Whatsapp enviada com sucesso.`,
@@ -295,9 +295,13 @@ export class ServiceService {
     try {
       const serviceOrders = await this.serviceModel.find({
         status: 'PENDENTE',
-        formOfPayment: 'Boleto'
+        formOfPayment: 'Boleto',
       })
-      return serviceOrders.filter((item) => item?.client?.id === clientId && item?.isBoletoUploaded).map((item) => item.osNumber)
+      return serviceOrders
+        .filter(
+          (item) => item?.client?.id === clientId && item?.isBoletoUploaded,
+        )
+        .map((item) => item.osNumber)
     } catch (error) {}
     return ['']
   }
@@ -306,9 +310,8 @@ export class ServiceService {
     files: Express.Multer.File[],
     osNumber: string,
     clientId: string,
-    isDontSendNotificationMessage?: boolean
+    isDontSendNotificationMessage?: boolean,
   ) {
-
     if (!files.length) {
       throw new HttpException(
         {
@@ -320,6 +323,7 @@ export class ServiceService {
     // Verificar se a pasta "boletos" já existe
     // const folderPath = path.join(__dirname, '..', 'boletos')
     const userHomeDir = os.homedir()
+    console.log({userHomeDir})
     const folderPath = path.join(userHomeDir, 'boletos')
     if (!fs.existsSync(folderPath)) {
       //fs.mkdirSync(folderPath)
@@ -345,13 +349,9 @@ export class ServiceService {
       const data = await this.clientsService.findOne(clientId)
       const phoneNumber = `55${clearSpecialCharacters(data?.phoneNumber)}`
       await this.getPendingOSNumber(clientId)
-     
+
       if (!isDontSendNotificationMessage) {
-        await this.sendNotificationWhatsappToClient(
-          osNumber,
-          false,
-          clientId
-        )
+        await this.sendNotificationWhatsappToClient(osNumber, false, clientId)
       }
 
       return {message: 'ok'}
@@ -458,7 +458,9 @@ export class ServiceService {
 
   async getTotalBoletoNotImported() {
     const orderServices = await this.findAllWithoutParam()
-    const resultData = orderServices.filter((item) => !item?.isEnableToDontShowBeforeYearCurrent)
+    const resultData = orderServices.filter(
+      (item) => !item?.isEnableToDontShowBeforeYearCurrent,
+    )
     const orders = []
     for (let index = 0; index < resultData.length; index++) {
       const element = resultData[index]
@@ -490,7 +492,9 @@ export class ServiceService {
 
   async getTotalClientWithoutEmail() {
     const orderServices = await this.findAllWithoutParam()
-    const resultData = orderServices.filter((item) => !item?.isEnableToDontShowBeforeYearCurrent)
+    const resultData = orderServices.filter(
+      (item) => !item?.isEnableToDontShowBeforeYearCurrent,
+    )
     const clients = []
     for (let index = 0; index < resultData.length; index++) {
       const element = resultData[index]
@@ -514,7 +518,7 @@ export class ServiceService {
     return result.filter((item) => {
       if (!item?.isEnableToDontShowBeforeYearCurrent) {
         return item
-      } 
+      }
     })
   }
 
@@ -638,7 +642,9 @@ export class ServiceService {
     const threeDaysFromNow = addDays(today, 3)
     let count = 0
     const incomes = await this.serviceModel.find()
-    const resultData = incomes.filter((item) => !item?.isEnableToDontShowBeforeYearCurrent)
+    const resultData = incomes.filter(
+      (item) => !item?.isEnableToDontShowBeforeYearCurrent,
+    )
     resultData.forEach((income) => {
       const maturityDate = parse(
         income.maturityOfTheBoleto || '',
@@ -663,13 +669,17 @@ export class ServiceService {
 
   async getTotalOrderService() {
     const result = await this.serviceModel.find()
-    const resultData = result.filter((item) => !item?.isEnableToDontShowBeforeYearCurrent)
+    const resultData = result.filter(
+      (item) => !item?.isEnableToDontShowBeforeYearCurrent,
+    )
     return {total: resultData?.length}
   }
 
   async getTotalProftMonth() {
     const resultExpense = await this.expense.findAll()
-    const resultDataExpense = resultExpense.filter((item) => !item?.isEnableToDontShowBeforeYearCurrent)
+    const resultDataExpense = resultExpense.filter(
+      (item) => !item?.isEnableToDontShowBeforeYearCurrent,
+    )
     const currentMonthAbbreviation = getMonthAbbreviation()
 
     const totalExpenseEmpresa = resultDataExpense.reduce((acc, item) => {
@@ -687,7 +697,9 @@ export class ServiceService {
       }
     }, 0)
     const resultIncome = await this.serviceModel.find()
-    const resultData = resultIncome.filter((item) => !item?.isEnableToDontShowBeforeYearCurrent)
+    const resultData = resultIncome.filter(
+      (item) => !item?.isEnableToDontShowBeforeYearCurrent,
+    )
     const totalIncome = resultData.reduce((acc, item) => {
       const dateIncomeIn = parse(
         item?.dateClientPayment || item?.dateOS,
@@ -712,7 +724,9 @@ export class ServiceService {
 
   async getSumTotalIncomes() {
     const result = await this.serviceModel.find()
-    const resultData = result.filter((item) => !item?.isEnableToDontShowBeforeYearCurrent)
+    const resultData = result.filter(
+      (item) => !item?.isEnableToDontShowBeforeYearCurrent,
+    )
     const total = resultData.reduce((acc, item) => {
       const {clean} = formatInputPrice(item?.total)
       if (item.status === 'PAGO') {
@@ -734,7 +748,9 @@ export class ServiceService {
 
   async getSumTotalOrcamento() {
     const result = await this.serviceModel.find()
-    const resultData = result.filter((item) => !item?.isEnableToDontShowBeforeYearCurrent)
+    const resultData = result.filter(
+      (item) => !item?.isEnableToDontShowBeforeYearCurrent,
+    )
     const total = resultData.reduce((acc, item) => {
       const {clean} = formatInputPrice(item?.total)
       if (item.typeDocument === 'ORCAMENTO') {
@@ -751,17 +767,19 @@ export class ServiceService {
   }
 
   async extractYear(dateString: string) {
-    const regex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
-    const match = dateString.match(regex);
+    const regex = /^(\d{2})\/(\d{2})\/(\d{4})$/
+    const match = dateString.match(regex)
     if (!match) {
-        console.error("Invalid date format. Please use the format DD/MM/YYYY.");
-        return null;
+      console.error('Invalid date format. Please use the format DD/MM/YYYY.')
+      return null
     }
-    const year = parseInt(match[3], 10);
-    return year;
-}
+    const year = parseInt(match[3], 10)
+    return year
+  }
 
-  async updateAllRegisterIncomesToDontShowBeforeYearCurrent(isEnableToDontShowBeforeYearCurrent: boolean) {
+  async updateAllRegisterIncomesToDontShowBeforeYearCurrent(
+    isEnableToDontShowBeforeYearCurrent: boolean,
+  ) {
     const orderServices = await this.serviceModel.find()
     const currentYear = new Date().getFullYear()
     orderServices.forEach(async (item) => {
@@ -770,11 +788,11 @@ export class ServiceService {
         try {
           await this.serviceModel.updateOne(
             {
-               _id: item._id,
+              _id: item._id,
             },
             {
               $set: {
-                isEnableToDontShowBeforeYearCurrent
+                isEnableToDontShowBeforeYearCurrent,
               },
             },
           )
@@ -789,7 +807,7 @@ export class ServiceService {
         }
       }
     })
-  } 
+  }
 
   async update(id: string, updateServiceDto: ServiceDto) {
     try {
