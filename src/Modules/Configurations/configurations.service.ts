@@ -379,6 +379,32 @@ export class ConfigurationSystemService {
   //   }
   // }
 
+  async findFilePixQDCODE(): Promise<FileType | null> {
+    try {
+      const userHomeDir = os.homedir()
+      const filePath = path.join(userHomeDir, 'boletos', 'pix.jpeg')
+
+      const readFileAsync = promisify(fs.readFile) // Promisify a função readFile
+
+      // Lê o arquivo de imagem
+      const fileData = await readFileAsync(filePath)
+
+      // Converte o arquivo para base64
+      const base64 = fileData.toString('base64')
+
+      // Retorna os dados do arquivo
+      return {
+        base64,
+        fileName: 'pix.jpeg',
+        path: filePath,
+        file: fileData,
+      }
+    } catch (error) {
+      console.error('Erro ao ler o arquivo:', error)
+      return null
+    }
+  }
+
   async findFileByOrderNumber(orderNumber: string): Promise<FileType[] | null> {
     const userHomeDir = os.homedir()
     const folderPath = path.join(userHomeDir, 'boletos')
@@ -438,7 +464,8 @@ export class ConfigurationSystemService {
     isResendNotification?: boolean,
     osNumberToResendNotification?: string[],
     isSendFilesWhatsappNotification?: boolean,
-    clientName?: string
+    clientName?: string,
+    formOfPayment?: string,
   ) {
     try {
       const osPending = osNumberToResendNotification.filter(
@@ -475,17 +502,26 @@ export class ConfigurationSystemService {
         }\n\nEstamos à disposição para ajudá-lo(a) com qualquer dúvida..\n\nCaso o boleto já esteja pago, por favor, desconsidere essa mensagem.\n\nAtenciosamente.\n\nSolution`
       }
 
+      const getMessageToSendPix = () => {
+        return `${getGreeting()}\n\nLembramos sobre o pagamento pendente da ordem de serviço de número *${osNumber}*. Agora você pode optar pelo pagamento via *Pix*, utilizando a chave Pix CNPJ: *46.293.911/0001-55*, registrada em Nome: *Lucas Martins De Barros Torres* ou *Solution*, Banco: *Nubank PJ*.\n\nApós efetuar o pagamento, envie o comprovante para o E-mail: *solution.financeiro2012@gmail.com*. A baixa do pagamento será feita automaticamente em nosso sistema.\n\nEstamos à disposição para esclarecer dúvidas ou ajudar no processo de pagamento.\n\nAtenciosamente.`
+      }
+
       await axios.post(
         `http://${ip}:8084/message/sendText/${instanceName}`,
         {
           number: phoneNumber,
-          textMessage: {
-            text: !isResendNotification
-              ? `${getGreeting()}\n\nEstamos enviando esta notificação via Whatsapp para lembrá-lo de que o boleto referente à ordem de serviço de número *${osNumber}* foi gerado.\n\nAgradecemos sua atenção e pontualidade.\nQualquer dúvida, estamos à disposição.\nCaso o boleto já esteja pago, por favor, desconsidere essa mensagem.\n\nAtenciosamente.`
-              : !isSendFilesWhatsappNotification
-              ? getMessagePendingNotificationWhenNotSendFiles()
-              : getMessagePendingNotification(),
-          },
+          textMessage:
+            formOfPayment === 'Pix'
+              ? {
+                  text: getMessageToSendPix(),
+                }
+              : {
+                  text: !isResendNotification
+                    ? `${getGreeting()}\n\nEstamos enviando esta notificação via Whatsapp para lembrá-lo de que o boleto referente à ordem de serviço de número *${osNumber}* foi gerado.\n\nAgradecemos sua atenção e pontualidade.\nQualquer dúvida, estamos à disposição.\nCaso o boleto já esteja pago, por favor, desconsidere essa mensagem.\n\nAtenciosamente.`
+                    : !isSendFilesWhatsappNotification
+                    ? getMessagePendingNotificationWhenNotSendFiles()
+                    : getMessagePendingNotification(),
+                },
           options: {
             delay: 1500,
             presence: 'composing',
@@ -514,19 +550,25 @@ export class ConfigurationSystemService {
     jwt: string,
     fileName: string,
     base64: string,
+    applicationType?: string,
   ) {
     try {
       const base64Data = base64
       // Decodificar a base64 para um buffer
       const binaryData = Buffer.from(base64Data, 'base64')
       // Criar um objeto Blob a partir do buffer
-      const blob = new Blob([binaryData], {type: 'application/pdf'})
+      const blob = new Blob([binaryData], {
+        type: applicationType || 'application/pdf',
+      })
 
       const formData = new FormData()
       formData.append('number', phoneNumber)
       formData.append('caption', ' ')
       formData.append('attachment', blob, fileName)
-      formData.append('mediatype', 'document')
+      formData.append(
+        'mediatype',
+        applicationType === 'image/jpeg' ? 'image' : 'document',
+      )
       formData.append('delay', '1500')
 
       await axios.post(
@@ -590,7 +632,8 @@ export class ConfigurationSystemService {
     isResendNotification?: boolean,
     osNumberToResendNotification?: string[],
     isSendFilesWhatsappNotification?: boolean,
-    clientName?: string
+    clientName?: string,
+    formOfPayment?: string,
   ) {
     try {
       let token = undefined
@@ -606,7 +649,10 @@ export class ConfigurationSystemService {
       }
       let instanceName = token?.instanceName
       let jwt = token?.jwt
+
       const files = await this.findFileByOrderNumber(osNumber)
+      const filePix = await this.findFilePixQDCODE()
+
       try {
         await this.sendTextToWhatsapp(
           phoneNumber,
@@ -617,7 +663,8 @@ export class ConfigurationSystemService {
           isResendNotification,
           osNumberToResendNotification,
           isSendFilesWhatsappNotification,
-          clientName
+          clientName,
+          formOfPayment,
         )
       } catch (error) {
         console.log('Erro ao enviar texto: ', error)
@@ -625,9 +672,10 @@ export class ConfigurationSystemService {
       /**
        * @description A variável isSendFilesWhatsappNotification permite ou nao enviar os arquivos no whatsapp
        */
-      if (isSendFilesWhatsappNotification) {
+      if (isSendFilesWhatsappNotification && formOfPayment !== 'Pix') {
         files.forEach(async (file) => {
           try {
+            const applicationType = 'application/pdf'
             await this.sendAttachmentToWhatsappClientNumber(
               phoneNumber,
               instanceName,
@@ -640,6 +688,22 @@ export class ConfigurationSystemService {
             console.log('Erro ao enviar anexo', error)
           }
         })
+      }
+      if (formOfPayment === 'Pix') {
+        const applicationType = 'image/jpeg'
+        try {
+          await this.sendAttachmentToWhatsappClientNumber(
+            phoneNumber,
+            instanceName,
+            ip,
+            jwt,
+            filePix.fileName,
+            filePix.base64,
+            applicationType,
+          )
+        } catch (error) {
+          console.log('Erro ao enviar anexo', error)
+        }
       }
       return 'File sended with successfully'
     } catch (error) {

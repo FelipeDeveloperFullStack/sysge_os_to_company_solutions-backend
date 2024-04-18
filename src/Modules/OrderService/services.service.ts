@@ -216,6 +216,8 @@ export class ServiceService {
 
     const dataClient = await this.clientsService.findOne(clientId)
 
+    const dataOS = await this.serviceModel.findOne({ osNumber })
+
     const phoneNumber = `55${clearSpecialCharacters(dataClient?.phoneNumber)}`
     const isSendFilesWhatsappNotification = dataClient?.isSendFilesWhatsappNotification
 
@@ -238,6 +240,7 @@ export class ServiceService {
               osNumberToResendNotification,
               isSendFilesWhatsappNotification,
               dataClient?.name,
+              dataOS.formOfPayment
             )
             this.logger.warn(
               `[Sistema] - Notificação de cobranca no Whatsapp enviada com sucesso.`,
