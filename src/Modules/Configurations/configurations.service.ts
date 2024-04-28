@@ -190,6 +190,8 @@ export class ConfigurationSystemService {
       isEnableEmailBilling: config?.isEnableEmailBilling,
       isEnableToDontShowBeforeYearCurrent:
         config?.isEnableToDontShowBeforeYearCurrent,
+      isEnableSendNotificationMessageStatusRecebido: config?.isEnableSendNotificationMessageStatusRecebido,
+      textToSendNotificationMessageStatusRecebido: config?.textToSendNotificationMessageStatusRecebido,  
     }
 
     if (config?.isEnableToDontShowBeforeYearCurrent) {
@@ -227,6 +229,7 @@ export class ConfigurationSystemService {
         },
         {
           $set: {
+            ...config,
             isEnableEmailBilling: config.isEnableEmailBilling,
             isEnableSendNotificationMessage:
               config.isEnableSendNotificationMessage,

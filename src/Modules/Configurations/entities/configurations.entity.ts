@@ -13,6 +13,12 @@ export class ConfigurationSystem {
 
   @Prop()
   public isEnableSendNotificationMessage: boolean
+
+  @Prop()
+  public isEnableSendNotificationMessageStatusRecebido: boolean
+
+  @Prop()
+  public textToSendNotificationMessageStatusRecebido: string
 }
 
 export const ConfigurationSystemSchema =
