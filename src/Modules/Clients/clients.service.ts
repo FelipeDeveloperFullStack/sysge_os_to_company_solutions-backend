@@ -42,7 +42,7 @@ export class ClientsService {
       cpfOrCnpj: String(createClientDto.cpfOrCnpj),
     })
     if (createClientDto?.cpfOrCnpj) {
-      if (isExistSameCPFOrCNPJ.length) {
+      if (isExistSameCPFOrCNPJ?.length) {
         throw new HttpException(
           {
             message: `Já existe um cliente cadastrado com o CPF/CNPJ ${String(
@@ -53,7 +53,6 @@ export class ClientsService {
         )
       }
     }
-
     if (isExistName.length) {
       throw new HttpException(
         {
@@ -121,12 +120,12 @@ export class ClientsService {
       !client.idFolderOsPendentes ||
       !client.idFolderOsUnificadas
     ) {
-      throw new HttpException(
-        {
-          message: 'IDs da Pasta no Google Drive Obrigatórias.',
-        },
-        HttpStatus.EXPECTATION_FAILED,
-      )
+      // throw new HttpException(
+      //   {
+      //     message: 'IDs da Pasta no Google Drive Obrigatórias.',
+      //   },
+      //   HttpStatus.EXPECTATION_FAILED,
+      // )
     }
 
     try {
@@ -243,12 +242,13 @@ export class ClientsService {
         status: HttpStatus.CREATED,
       }
     } catch (error) {
-      throw new HttpException(
-        {
-          message: error,
-        },
-        HttpStatus.EXPECTATION_FAILED,
-      )
+      this.logger.error("[Sistema] - Houve um erro ao tentar excluir o cliente.")
+      // throw new HttpException(
+      //   {
+      //     message: error,
+      //   },
+      //   HttpStatus.EXPECTATION_FAILED,
+      // )
     }
   }
 
@@ -416,12 +416,12 @@ export class ClientsService {
       }
     } catch (error) {
       this.logger.log(error)
-      throw new HttpException(
-        {
-          message: error,
-        },
-        HttpStatus.EXPECTATION_FAILED,
-      )
+      // throw new HttpException(
+      //   {
+      //     message: error,
+      //   },
+      //   HttpStatus.EXPECTATION_FAILED,
+      // )
     }
   }
 }
