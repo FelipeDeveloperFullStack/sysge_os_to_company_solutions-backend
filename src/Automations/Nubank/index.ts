@@ -6,7 +6,7 @@ import * as readline from 'readline'
 import {isDevelopmentEnvironment} from 'src/Common/Functions'
 
 const SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
-const PORT = 3005
+const PORT = process.env.PORT
 const REDIRECT_URL = `http://localhost:${PORT}`
 const getTokenGmailFile = () => {
   return isDevelopmentEnvironment()

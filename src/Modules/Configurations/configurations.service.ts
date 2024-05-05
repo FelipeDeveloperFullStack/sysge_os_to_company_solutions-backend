@@ -81,7 +81,7 @@ export class ConfigurationSystemService {
         `http://${ip}:8084/webhook/set/${instanceName}`,
         {
           enabled: true,
-          url: `http://${data.publicIP}:3005/configurations`,
+          url: `http://${data.publicIP}:${process.env.PORT}/configurations`,
           events: {
             qrcodeUpdated: true,
             messagesSet: false,
@@ -371,7 +371,7 @@ export class ConfigurationSystemService {
   //       `http://${ip}:8084/webhook/set/${instanceName}`,
   //       {
   //         enabled: true,
-  //         url: `http://${ip}:3005/configurations`,
+  //         url: `http://${ip}:${process.env.PORT}/configurations`,
   //       },
   //       {
   //         headers: {

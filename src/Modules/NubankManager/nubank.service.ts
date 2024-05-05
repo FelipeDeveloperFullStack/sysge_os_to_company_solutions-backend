@@ -31,7 +31,7 @@ import {ExtractNubank, ExtractNubankDocument} from './entities/nubank.entity'
 @Injectable()
 export class ExtractNubankService implements OnModuleInit {
   private SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
-  private PORT = 3005
+  private PORT = process.env.PORT
   private REDIRECT_URL = `http://localhost:${this.PORT}`
   private TOKEN_FILE_GMAIL = 'token_gmail.json'
   private logger = new Logger()
