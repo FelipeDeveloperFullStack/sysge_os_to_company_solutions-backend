@@ -190,8 +190,10 @@ export class ConfigurationSystemService {
       isEnableEmailBilling: config?.isEnableEmailBilling,
       isEnableToDontShowBeforeYearCurrent:
         config?.isEnableToDontShowBeforeYearCurrent,
-      isEnableSendNotificationMessageStatusRecebido: config?.isEnableSendNotificationMessageStatusRecebido,
-      textToSendNotificationMessageStatusRecebido: config?.textToSendNotificationMessageStatusRecebido,  
+      isEnableSendNotificationMessageStatusRecebido:
+        config?.isEnableSendNotificationMessageStatusRecebido,
+      textToSendNotificationMessageStatusRecebido:
+        config?.textToSendNotificationMessageStatusRecebido,
     }
 
     if (config?.isEnableToDontShowBeforeYearCurrent) {
@@ -546,6 +548,52 @@ export class ConfigurationSystemService {
     }
   }
 
+  async sendTextToWhatsappSimple(
+    ip: string,
+    instanceName: string,
+    jwt: string,
+    phoneNumber: string,
+    osNumber: string,
+    text: string,
+  ) {
+    try {
+      const getMessageToSend = () => {
+        if (text.includes('@os')) {
+          text = text.replace(/@os/g, osNumber)
+          return text
+        }
+        return text
+      }
+
+      await axios.post(
+        `http://${ip}:8084/message/sendText/${instanceName}`,
+        {
+          number: phoneNumber,
+          textMessage: {
+            text: getMessageToSend(),
+          },
+
+          options: {
+            delay: 1500,
+            presence: 'composing',
+          },
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${jwt}`,
+          },
+        },
+      )
+    } catch (error) {
+      throw new HttpException(
+        {
+          message: error,
+        },
+        HttpStatus.EXPECTATION_FAILED,
+      )
+    }
+  }
+
   async sendAttachmentToWhatsappClientNumber(
     phoneNumber: string,
     instanceName: string,
@@ -707,6 +755,50 @@ export class ConfigurationSystemService {
         } catch (error) {
           console.log('Erro ao enviar anexo', error)
         }
+      }
+      return 'File sended with successfully'
+    } catch (error) {
+      //console.log(error)
+      throw new HttpException(
+        {
+          message: error,
+        },
+        HttpStatus.EXPECTATION_FAILED,
+      )
+    }
+  }
+
+  async sendTextNotificationWhatsappBoletoRecebido(
+    phoneNumber: string,
+    osNumber: string,
+    text: string,
+  ) {
+    try {
+      let token = undefined
+      let ip = undefined
+      if (fs.existsSync('token_whatsapp.json')) {
+        token = await this.readTokenFromFile()
+      }
+      if (isDevelopmentEnvironment()) {
+        ip = getLocalIP() // Development virtual machine
+      } else {
+        //ip = await getPublicIP()
+        ip = 'localhost'
+      }
+      let instanceName = token?.instanceName
+      let jwt = token?.jwt
+
+      try {
+        await this.sendTextToWhatsappSimple(
+          ip,
+          instanceName,
+          jwt,
+          phoneNumber,
+          osNumber,
+          text,
+        )
+      } catch (error) {
+        console.log('Erro ao enviar texto: ', error)
       }
       return 'File sended with successfully'
     } catch (error) {

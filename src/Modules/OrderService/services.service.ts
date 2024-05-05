@@ -811,7 +811,14 @@ export class ServiceService {
 
   async update(id: string, updateServiceDto: ServiceDto) {
     try {
+      const config = await this.configurationSystemService.findAll()
+
       const orderService = await this.serviceModel.findOne({_id: id})
+
+      const cliendData = await this.clientsService.findOne(
+        orderService?.client?.id,
+      )
+
       if (updateServiceDto.status === 'PAGO') {
         await this.deleteFileByOrderNumber(orderService.osNumber)
         updateServiceDto = {
@@ -850,6 +857,75 @@ export class ServiceService {
           description: null,
         }
       }
+
+      if (
+        updateServiceDto?.formOfPayment === 'Boleto' &&
+        updateServiceDto.status === 'PAGO'
+      ) {
+        if (config?.length) {
+          const isEnableSendNotificationMessageStatusRecebido =
+            config[0].isEnableSendNotificationMessageStatusRecebido
+          const textToSendNotificationMessageStatusRecebido =
+            config[0].textToSendNotificationMessageStatusRecebido
+          if (
+            isEnableSendNotificationMessageStatusRecebido &&
+            !orderService?.isSendNotificationBoletoRecebido
+          ) {
+            const phoneNumber = cliendData.phoneNumber
+            const osNumber = orderService.osNumber
+            try {
+              setTimeout(async () => {
+                if (phoneNumber) {
+                  try {
+                    this.logger.debug(
+                      `[Sistema] - Enviando notificação no Whatsapp ${phoneNumber} referente a OS ${osNumber}...`,
+                    )
+                    await this.configurationSystemService.sendTextNotificationWhatsappBoletoRecebido(
+                      clearSpecialCharacters(phoneNumber),
+                      osNumber,
+                      textToSendNotificationMessageStatusRecebido,
+                    )
+                    this.logger.warn(
+                      `[Sistema] - Notificação no Whatsapp enviada com sucesso.`,
+                    )
+                    /** @description Marca a propriedade "isSendNotificationBoletoRecebido" como true para evitar enviar mais de uma vez. Só irá enviar uma única vez.*/
+                    updateServiceDto = {
+                      ...updateServiceDto,
+                      isSendNotificationBoletoRecebido: true,
+                    }
+
+                    await this.serviceModel.updateOne(
+                      {
+                        _id: id,
+                      },
+                      {
+                        $set: updateServiceDto,
+                      },
+                    )
+                    
+                  } catch (error) {
+                    this.logger.error(
+                      `[Sistema] - Houve um erro ao enviar a notificacao no Whatsapp ${phoneNumber} referente a OS ${osNumber}.`,
+                    )
+                  }
+                } else {
+                  this.logger.error(
+                    `[Sistema] - Número de whatsapp não encontrado referente a OS ${osNumber}.`,
+                  )
+                }
+              }, 10000)
+            } catch (error) {
+              throw new HttpException(
+                {
+                  message: error,
+                },
+                HttpStatus.EXPECTATION_FAILED,
+              )
+            }
+          }
+        }
+      }
+
       await this.serviceModel.updateOne(
         {
           _id: id,

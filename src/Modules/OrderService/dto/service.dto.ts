@@ -11,6 +11,10 @@ export class ServiceDto {
   public isLaunchMoney?: boolean
 
   @IsOptional()
+  @IsBoolean()
+  public isSendNotificationBoletoRecebido?: boolean
+
+  @IsOptional()
   @IsString()
   public description?: string
 

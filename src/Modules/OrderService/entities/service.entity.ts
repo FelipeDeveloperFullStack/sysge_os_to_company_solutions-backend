@@ -160,6 +160,9 @@ export class OrderService {
 
   @Prop()
   public isEnableToDontShowBeforeYearCurrent?: boolean
+  
+  @Prop()
+  public isSendNotificationBoletoRecebido?: boolean
 }
 
 export const ServiceSchema = SchemaFactory.createForClass(OrderService)
